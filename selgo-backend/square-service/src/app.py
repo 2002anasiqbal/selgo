@@ -6,9 +6,9 @@ import logging
 
 from .config.config import settings
 from .database.database import engine, Base
-from .api.routes import router as property_router
-from .models.models import *
-from .utils.auth import auth_client
+from .api.routes import router as item_router
+from .models.item_models import *
+from .utils.auth_client import auth_client
 
 # Configure logging
 logging.basicConfig(
@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Selgo Property Service",
-    description="API for property listings and related operations",
+    title="Selgo Square Service",
+    description="API for marketplace items and related operations",
     version="0.1.0",
 )
 
@@ -40,20 +40,20 @@ os.makedirs(settings.UPLOAD_FOLDER, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_FOLDER), name="uploads")
 
 # Include routers
-app.include_router(property_router)
+app.include_router(item_router)
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "property", "version": "0.1.0"}
+    return {"status": "healthy", "service": "square", "version": "0.1.0"}
 
 # Root endpoint
 @app.get("/")
 async def root():
     return {
-        "service": "property",
+        "service": "square",
         "version": "0.1.0",
-        "description": "API for property listings and related operations",
+        "description": "API for marketplace items and related operations",
         "documentation": "/docs",
     }
 
