@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import boatService from "@/services/boatService";
-import ProductDetail from "@/components/general/ProductDetail"; 
+import ProductDetail from "@/components/general/ProductDetail";
 import LocationMap from "@/components/general/LocationMap";
+import chatService from "@/services/chatService";
 
 
 // Geocoding function to convert location name to coordinates
@@ -277,6 +278,33 @@ const expandedKeyInfo = (
     setShowFixDoneForm(!showFixDoneForm);
   };
 
+  const handleContactSeller = async () => {
+    try {
+      // Check authentication before allowing message
+      const token = localStorage.getItem('accessToken');
+      const user = localStorage.getItem('user');
+
+      if (!token || !user) {
+        alert("Please log in to contact the seller.");
+        router.push('/routes/auth/signin');
+        return;
+      }
+
+      const userObj = JSON.parse(user);
+
+      if (userObj.id === boat.user_id) {
+        alert("You cannot contact yourself.");
+        return;
+      }
+
+      const conversation = await chatService.createConversation(boat.user_id);
+      router.push(`/routes/chat?conversationId=${conversation.id}`);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      alert("Error creating conversation. Please try again.");
+    }
+  };
+
   return (
     <div className="container mx-auto">
       <ProductDetail
@@ -290,6 +318,7 @@ const expandedKeyInfo = (
         sellerInfo={sellerInfo}
         onMessageClick={handleMessageClick}
         onFixDoneClick={handleFixDoneClick}
+        onContactSellerClick={handleContactSeller}
       />
       
       {/* Fix Done Request Form - ABOVE the Loan Calculator and Map */}

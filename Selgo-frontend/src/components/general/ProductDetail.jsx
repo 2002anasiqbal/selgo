@@ -16,6 +16,7 @@ const ProductDetail = ({
   sellerInfo,
   onMessageClick,
   onFixDoneClick,
+  onContactSellerClick,
   expandedKeyInfo, // New prop for expanded info
 }) => {
   const router = useRouter();
@@ -181,6 +182,12 @@ const ProductDetail = ({
             className="w-full mt-4 px-5 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 transition"
           >
             Send Message
+          </button>
+          <button
+            onClick={onContactSellerClick}
+            className="w-full mt-2 px-5 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition"
+          >
+            Contact Seller
           </button>
           <button
             onClick={onFixDoneClick}
