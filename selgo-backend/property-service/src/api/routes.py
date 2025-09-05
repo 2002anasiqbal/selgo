@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from ..database.database import get_database
-from ..services.property_services import PropertyCategoryService, PropertyService
+from ..services.property_service_rebuilt import PropertyCategoryService, PropertyService, ResourceNotFoundException
 from ..models.property_schemas import (
     PropertyCategoryResponse, PropertyResponse,
     PropertyCreate, PropertyUpdate, PropertyFilterParams, PaginatedResponse
@@ -37,15 +37,14 @@ async def get_property_detail(
     property_id: UUID,
     db: Session = Depends(get_database)
 ):
-    property_obj = PropertyService.get_property_by_id(db, str(property_id), increment_view=True)
-    
-    if not property_obj:
+    try:
+        property_obj = PropertyService.get_property_by_id(db, str(property_id), increment_view=True)
+        return property_obj
+    except ResourceNotFoundException as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Property not found"
+            detail=str(e)
         )
-    
-    return property_obj
 
 @router.post("", response_model=PropertyResponse)
 async def create_property(
@@ -69,15 +68,14 @@ async def update_property(
     db: Session = Depends(get_database),
     current_user_id: str = Depends(get_current_user_id)
 ):
-    property_obj = PropertyService.update_property(db, str(property_id), property_data, current_user_id)
-    
-    if not property_obj:
+    try:
+        property_obj = PropertyService.update_property(db, str(property_id), property_data, current_user_id)
+        return property_obj
+    except ResourceNotFoundException as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Property not found or permission denied"
+            detail=str(e)
         )
-    
-    return property_obj
 
 @router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_property(
@@ -85,10 +83,11 @@ async def delete_property(
     db: Session = Depends(get_database),
     current_user_id: str = Depends(get_current_user_id)
 ):
-    success = PropertyService.delete_property(db, str(property_id), current_user_id)
-    if not success:
+    try:
+        PropertyService.delete_property(db, str(property_id), current_user_id)
+        return {"detail": "Property deleted successfully"}
+    except ResourceNotFoundException as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Property not found or permission denied"
+            detail=str(e)
         )
-    return {"detail": "Property deleted successfully"}

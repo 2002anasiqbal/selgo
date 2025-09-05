@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, or_, asc, desc
 from geoalchemy2 import Geometry
 from geoalchemy2.functions import ST_Distance, ST_Transform, ST_SetSRID, ST_MakePoint
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple
 from ..models.models import PropertyCategory, Property, PropertyImage, PropertyFacility, Facility, PropertyMessage, UserFavorite
 from ..models.property_schemas import PropertyFilterParams, GeoPoint
 import logging
@@ -19,7 +19,7 @@ class PropertyCategoryRepository:
         return db_category
 
     @staticmethod
-    def get_by_id(db: Session, category_id: int) -> Optional[PropertyCategory]:
+    def get_by_id(db: Session, category_id: int) -> PropertyCategory:
         return db.query(PropertyCategory).filter(PropertyCategory.id == category_id).first()
 
     @staticmethod
@@ -27,7 +27,7 @@ class PropertyCategoryRepository:
         return db.query(PropertyCategory).offset(skip).limit(limit).all()
 
     @staticmethod
-    def update(db: Session, category_id: int, category_data: Dict[str, Any]) -> Optional[PropertyCategory]:
+    def update(db: Session, category_id: int, category_data: Dict[str, Any]) -> PropertyCategory:
         db_category = db.query(PropertyCategory).filter(PropertyCategory.id == category_id).first()
         if db_category:
             for key, value in category_data.items():
@@ -60,7 +60,7 @@ class PropertyRepository:
         return db_property
 
     @staticmethod
-    def get_by_id(db: Session, property_id: str) -> Optional[Property]:
+    def get_by_id(db: Session, property_id: str) -> Property:
         return db.query(Property).filter(Property.id == property_id).first()
 
     @staticmethod
@@ -109,7 +109,7 @@ class PropertyRepository:
         return properties, total
 
     @staticmethod
-    def update(db: Session, property_id: str, property_data: Dict[str, Any]) -> Optional[Property]:
+    def update(db: Session, property_id: str, property_data: Dict[str, Any]) -> Property:
         db_property = db.query(Property).filter(Property.id == property_id).first()
 
         if not db_property:
@@ -138,7 +138,7 @@ class PropertyRepository:
         return False
 
     @staticmethod
-    def increment_view_count(db: Session, property_id: str) -> Optional[Property]:
+    def increment_view_count(db: Session, property_id: str) -> Property:
         db_property = db.query(Property).filter(Property.id == property_id).first()
         if db_property:
             db_property.views_count += 1
