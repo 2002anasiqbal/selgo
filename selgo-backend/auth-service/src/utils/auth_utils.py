@@ -36,6 +36,18 @@ def create_refresh_token() -> str:
     """Create a secure random refresh token."""
     return secrets.token_urlsafe(32)
 
+def generate_otp(length: int = 6) -> str:
+    """Generate a random OTP."""
+    return "".join(secrets.choice("0123456789") for _ in range(length))
+
+def generate_email_verification_token() -> str:
+    """Generate a secure random token for email verification."""
+    return secrets.token_urlsafe(32)
+
+def generate_password_reset_token() -> str:
+    """Generate a secure random token for password reset."""
+    return secrets.token_urlsafe(32)
+
 def verify_token(token: str) -> Dict[str, Any]:
     """Verify and decode a JWT token."""
     try:

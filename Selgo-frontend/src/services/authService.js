@@ -161,6 +161,33 @@ const authService = {
   getStoredUser: () => {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
+  },
+
+  getGoogleLoginUrl: async () => {
+    try {
+      const response = await authClient.get('/google/login');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  forgotPassword: async (emailData) => {
+    try {
+      const response = await authClient.post('/password/forgot', emailData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  resetPassword: async (resetData) => {
+    try {
+      const response = await authClient.post('/password/reset', resetData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
   }
 };
 

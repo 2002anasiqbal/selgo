@@ -6,6 +6,7 @@ import LocationMap from "@/components/general/LocationMap";
 import Image from "next/image";
 import FeedbackForm from "@/components/general/FeedbackForm";
 import propertyService from "@/services/propertyService";
+import Link from 'next/link';
 
 export default function SellPage() {
     const [priceInsights, setPriceInsights] = useState([]);
@@ -93,6 +94,11 @@ export default function SellPage() {
                         <button className="px-10 py-2 bg-teal-600 text-white font-semibold rounded-md hover:bg-teal-700 transition">
                             Checkout tips and tricks here
                         </button>
+                        <Link href="/routes/property/create-ad">
+                          <button className="px-10 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition">
+                              Create Ad
+                          </button>
+                        </Link>
                     </div>
                 </div>
 

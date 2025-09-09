@@ -25,7 +25,8 @@ class UserResponse(UserBase):
     auth_provider: AuthProvider
     avatar_url: Optional[str] = None
     is_active: bool
-    is_verified: bool
+    is_email_verified: bool
+    is_phone_verified: bool
     created_at: datetime
     last_login: Optional[datetime] = None
     
@@ -60,6 +61,13 @@ class OAuthCallback(BaseModel):
     code: str
     state: Optional[str] = None
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordReset(BaseModel):
+    token: str
+    new_password: str
+
 # Token validation response (for other services)
 class TokenValidationResponse(BaseModel):
     user_id: int
@@ -67,3 +75,6 @@ class TokenValidationResponse(BaseModel):
     email: str
     role: UserRole
     is_active: bool
+
+class PhoneVerificationRequest(BaseModel):
+    otp: str

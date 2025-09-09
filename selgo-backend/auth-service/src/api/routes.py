@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 from typing import List
 from ..database.database import get_db
 from ..services.auth_service import AuthService
+from ..services.oauth_service import OAuthService
 from ..models.user_schemas import (
-    UserCreate, UserResponse, LoginRequest, LoginResponse, 
+    UserCreate, UserResponse, LoginRequest, LoginResponse,
     RefreshTokenRequest, TokenResponse, ChangePasswordRequest,
-    TokenValidationResponse
+    TokenValidationResponse, PhoneVerificationRequest, OAuthCallback,
+    PasswordResetRequest, PasswordReset
 )
 from ..utils.auth_utils import get_user_from_token
 from ..config.config import settings
@@ -22,6 +24,27 @@ user_router = APIRouter(prefix="/api/v1", tags=["users"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX}/auth/token")
 
 auth_service = AuthService()
+oauth_service = OAuthService()
+
+@router.get("/google/login")
+async def google_login():
+    """Generate Google OAuth authorization URL."""
+    redirect_uri = f"{settings.API_URL}/auth/google/callback"
+    authorization_url = await oauth_service.google_auth_url(redirect_uri)
+    return {"authorization_url": authorization_url}
+
+@router.get("/google/callback", response_model=LoginResponse)
+async def google_callback(callback_data: OAuthCallback = Depends(), db: Session = Depends(get_db)):
+    """Handle Google OAuth callback."""
+    redirect_uri = f"{settings.API_URL}/auth/google/callback"
+    access_token, refresh_token, user = await oauth_service.google_callback(db, callback_data.code, redirect_uri)
+
+    return LoginResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse.model_validate(user)
+    )
 
 # Existing auth routes
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -112,6 +135,76 @@ def validate_token(token: str = Depends(oauth2_scheme)):
     """Validate token and return user information. Used by other microservices."""
     user_data = get_user_from_token(token)
     return TokenValidationResponse(**user_data)
+
+@router.post("/verify/email/send")
+def send_email_verification(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Resend email verification token."""
+    user_data = get_user_from_token(token)
+    user = auth_service.user_repo.get_by_id(db, user_data["user_id"])
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    auth_service.send_email_verification(db, user)
+    return {"message": "Verification email sent"}
+
+@router.post("/verify/email/{token}")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    """Verify email with token."""
+    success = auth_service.verify_email(db, token)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token"
+        )
+    return {"message": "Email verified successfully"}
+
+@router.post("/verify/phone/send")
+def send_phone_verification(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Send phone verification OTP."""
+    user_data = get_user_from_token(token)
+    user = auth_service.user_repo.get_by_id(db, user_data["user_id"])
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    auth_service.send_phone_verification(db, user)
+    return {"message": "Verification OTP sent to phone"}
+
+@router.post("/verify/phone")
+def verify_phone(
+    verification_data: PhoneVerificationRequest,
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    """Verify phone with OTP."""
+    user_data = get_user_from_token(token)
+    success = auth_service.verify_phone(db, user_data["user_id"], verification_data.otp)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired OTP"
+        )
+    return {"message": "Phone verified successfully"}
+
+@router.post("/password/forgot")
+def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Request a password reset."""
+    auth_service.request_password_reset(db, request.email)
+    return {"message": "Password reset email sent"}
+
+@router.post("/password/reset")
+def reset_password(request: PasswordReset, db: Session = Depends(get_db)):
+    """Reset password."""
+    success = auth_service.reset_password(db, request.token, request.new_password)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token"
+        )
+    return {"message": "Password reset successfully"}
 
 # MOVED: User endpoint to separate router with correct prefix
 @user_router.get("/users/{user_id}")

@@ -78,10 +78,11 @@ const Login = () => {
    // Handle OAuth Login (Google)
   const handleGoogleLogin = async () => {
     try {
-      // For now, show a message that OAuth is not implemented
-      alert("Google OAuth is not yet implemented. Please use email/password login.");
+      const response = await authService.getGoogleLoginUrl();
+      window.location.href = response.authorization_url;
     } catch (error) {
       console.error("Google login error:", error);
+      setError("Could not initiate Google login. Please try again later.");
     }
   };
 

@@ -49,6 +49,20 @@ class UserRepository:
             db.commit()
             return True
         return False
+
+    def update_password_reset_token(self, db: Session, user_id: int, token: str, expires_at: datetime) -> bool:
+        """Update password reset token."""
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if db_user:
+            db_user.password_reset_token = token
+            db_user.password_reset_expires = expires_at
+            db.commit()
+            return True
+        return False
+
+    def get_by_password_reset_token(self, db: Session, token: str) -> Optional[User]:
+        """Get user by password reset token."""
+        return db.query(User).filter(User.password_reset_token == token).first()
     
     def update_password(self, db: Session, user_id: int, hashed_password: str) -> bool:
         """Update user password."""
@@ -82,4 +96,50 @@ class UserRepository:
             db_token.is_revoked = True
             db.commit()
             return True
-        return False  
+        return False
+
+    def update_email_verification_token(self, db: Session, user_id: int, token: str, expires_at: datetime) -> bool:
+        """Update email verification token."""
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if db_user:
+            db_user.email_verification_token = token
+            db_user.email_verification_expires = expires_at
+            db.commit()
+            return True
+        return False
+
+    def get_by_email_verification_token(self, db: Session, token: str) -> Optional[User]:
+        """Get user by email verification token."""
+        return db.query(User).filter(User.email_verification_token == token).first()
+
+    def verify_email(self, db: Session, user_id: int) -> bool:
+        """Mark user's email as verified."""
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if db_user:
+            db_user.is_email_verified = True
+            db_user.email_verification_token = None
+            db_user.email_verification_expires = None
+            db.commit()
+            return True
+        return False
+
+    def update_phone_verification_code(self, db: Session, user_id: int, code: str, expires_at: datetime) -> bool:
+        """Update phone verification code."""
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if db_user:
+            db_user.phone_verification_code = code
+            db_user.phone_verification_expires = expires_at
+            db.commit()
+            return True
+        return False
+
+    def verify_phone(self, db: Session, user_id: int) -> bool:
+        """Mark user's phone as verified."""
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if db_user:
+            db_user.is_phone_verified = True
+            db_user.phone_verification_code = None
+            db_user.phone_verification_expires = None
+            db.commit()
+            return True
+        return False

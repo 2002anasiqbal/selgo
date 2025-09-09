@@ -19,6 +19,38 @@ async def get_property_categories(
 ):
     return PropertyCategoryService.get_all_categories(db)
 
+@router.get("/categories/{category_id}", response_model=PropertyCategoryResponse)
+async def get_property_category(
+    category_id: int,
+    db: Session = Depends(get_database)
+):
+    try:
+        return PropertyCategoryService.get_category_by_id(db, category_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+@router.put("/categories/{category_id}", response_model=PropertyCategoryResponse)
+async def update_property_category(
+    category_id: int,
+    category_data: PropertyCategoryCreate,
+    db: Session = Depends(get_database)
+):
+    try:
+        return PropertyCategoryService.update_category(db, category_id, category_data)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+@router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_property_category(
+    category_id: int,
+    db: Session = Depends(get_database)
+):
+    try:
+        PropertyCategoryService.delete_category(db, category_id)
+        return {"detail": "Category deleted successfully"}
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
 @router.post("/filter", response_model=PaginatedResponse)
 async def filter_properties(
     filters: PropertyFilterParams,
