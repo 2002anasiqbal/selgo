@@ -74,10 +74,19 @@ const Signup = () => {
           <FaChevronLeft className="text-black text-lg" />
         </button>
 
-        <div className="max-w-3xl w-full px-8">
-          <h2 className="text-3xl font-semibold mb-2 text-gray-900">
-            Welcome to the shopping community
-          </h2>
+        <div className="max-w-sm w-full px-8">
+          <div className="text-center mb-10">
+            <Link href="/">
+              <Image
+                src="/assets/logo.svg"
+                alt="Selgo"
+                width={120}
+                height={40}
+                className="mx-auto"
+              />
+            </Link>
+          </div>
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Create an account</h2>
           <p className="text-gray-600 mb-6">
             Already have an account?{" "}
             <Link href="/routes/auth/signin" className="text-blue-600 hover:underline">
@@ -198,7 +207,7 @@ const Signup = () => {
             {/* Signup Button */}
             <button
               type="submit"
-              className="w-1/5 bg-teal-500 text-white py-2 rounded-lg mt-2 hover:bg-teal-600 transition"
+              className="w-full bg-teal-500 text-white py-2 rounded-lg mt-2 hover:bg-teal-600 transition"
               disabled={loading}
             >
               {loading ? "Signing up..." : "Sign up"}
@@ -215,7 +224,7 @@ const Signup = () => {
       </div>
 
       {/* Right Section (Image) */}
-      <div className="hidden md:flex w-2/5 relative">
+      <div className="hidden md:flex w-1/2 relative">
         <Image
           src="/assets/signin/2-signup.png"
           alt="Signup"

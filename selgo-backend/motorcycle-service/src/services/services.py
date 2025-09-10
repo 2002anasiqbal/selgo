@@ -11,7 +11,10 @@ from ..models import models
 from ..models import schemas
 from ..utils.auth_client import auth_client
 
-class MotorcycleService:    
+class ResourceNotFoundException(Exception):
+    pass
+
+class MotorcycleService:
     
     @staticmethod
     def create_motorcycle(db: Session, motorcycle: schemas.MotorcycleCreate) -> models.Motorcycle:
@@ -76,69 +79,71 @@ class MotorcycleService:
         return db_motorcycle
 
     @staticmethod
-    def get_motorcycle(db: Session, motorcycle_id: int) -> Optional[models.Motorcycle]:
+    def get_motorcycle(db: Session, motorcycle_id: int) -> models.Motorcycle:
         motorcycle = db.query(models.Motorcycle).filter(
             models.Motorcycle.id == motorcycle_id,
             models.Motorcycle.is_active == True
         ).first()
         
-        if motorcycle:
-            # Increment view count
-            motorcycle.views_count += 1
-            db.commit()
-            
-            # Get seller info from auth service
-            if motorcycle.seller_id:
-                seller_data = auth_client.get_user_by_id(motorcycle.seller_id)
-                if seller_data:
-                    # Create proper SellerInfo object
-                    from ..models.schemas import SellerInfo
-                    from datetime import datetime
-                    
-                    # Parse created_at properly
-                    created_at = None
-                    if seller_data.get('created_at'):
-                        try:
-                            if isinstance(seller_data['created_at'], str):
-                                # Parse ISO format datetime string
-                                created_at = datetime.fromisoformat(seller_data['created_at'].replace('Z', '+00:00'))
-                            else:
-                                created_at = seller_data['created_at']
-                        except:
-                            created_at = datetime(2025, 1, 1)
-                    
-                    motorcycle.seller = SellerInfo(
-                        id=seller_data.get('id', motorcycle.seller_id),
-                        name=seller_data.get('username', f"User {motorcycle.seller_id}"),
-                        email=seller_data.get('email'),
-                        phone=seller_data.get('phone'),
-                        created_at=created_at
-                    )
-                else:
-                    # Fallback if auth service is unavailable
-                    from ..models.schemas import SellerInfo
-                    from datetime import datetime
-                    motorcycle.seller = SellerInfo(
-                        id=motorcycle.seller_id,
-                        name=f"User {motorcycle.seller_id}",
-                        email=None,
-                        phone=None,
-                        created_at=datetime(2025, 1, 1)
-                    )
-            
-            # Load images
-            images = db.query(models.MotorcycleImage).filter(
-                models.MotorcycleImage.motorcycle_id == motorcycle.id
-            ).all()
-            motorcycle.images = images
-            
-            # Load category
-            if motorcycle.category_id:
-                category = db.query(models.MotorcycleCategory).filter(
-                    models.MotorcycleCategory.id == motorcycle.category_id
-                ).first()
-                motorcycle.category = category
+        if not motorcycle:
+            raise ResourceNotFoundException("Motorcycle not found")
+
+        # Increment view count
+        motorcycle.views_count += 1
+        db.commit()
+
+        # Get seller info from auth service
+        if motorcycle.seller_id:
+            seller_data = auth_client.get_user_by_id(motorcycle.seller_id)
+            if seller_data:
+                # Create proper SellerInfo object
+                from ..models.schemas import SellerInfo
+                from datetime import datetime
+
+                # Parse created_at properly
+                created_at = None
+                if seller_data.get('created_at'):
+                    try:
+                        if isinstance(seller_data['created_at'], str):
+                            # Parse ISO format datetime string
+                            created_at = datetime.fromisoformat(seller_data['created_at'].replace('Z', '+00:00'))
+                        else:
+                            created_at = seller_data['created_at']
+                    except:
+                        created_at = datetime(2025, 1, 1)
                 
+                motorcycle.seller = SellerInfo(
+                    id=seller_data.get('id', motorcycle.seller_id),
+                    name=seller_data.get('username', f"User {motorcycle.seller_id}"),
+                    email=seller_data.get('email'),
+                    phone=seller_data.get('phone'),
+                    created_at=created_at
+                )
+            else:
+                # Fallback if auth service is unavailable
+                from ..models.schemas import SellerInfo
+                from datetime import datetime
+                motorcycle.seller = SellerInfo(
+                    id=motorcycle.seller_id,
+                    name=f"User {motorcycle.seller_id}",
+                    email=None,
+                    phone=None,
+                    created_at=datetime(2025, 1, 1)
+                )
+
+        # Load images
+        images = db.query(models.MotorcycleImage).filter(
+            models.MotorcycleImage.motorcycle_id == motorcycle.id
+        ).all()
+        motorcycle.images = images
+
+        # Load category
+        if motorcycle.category_id:
+            category = db.query(models.MotorcycleCategory).filter(
+                models.MotorcycleCategory.id == motorcycle.category_id
+            ).first()
+            motorcycle.category = category
+
         return motorcycle
     
     @staticmethod
@@ -416,7 +421,7 @@ class GeocodeService:
 
 class UserFavoriteMotorcycleRepository:
     @staticmethod
-    def add_favorite(db: Session, user_id: int, motorcycle_id: int) -> Optional[models.UserFavoriteMotorcycle]:
+    def add_favorite(db: Session, user_id: int, motorcycle_id: int) -> models.UserFavoriteMotorcycle:
         # Check if already favorited
         existing = db.query(models.UserFavoriteMotorcycle).filter(
             models.UserFavoriteMotorcycle.user_id == user_id,
@@ -431,6 +436,8 @@ class UserFavoriteMotorcycleRepository:
         db.add(favorite)
         db.commit()
         db.refresh(favorite)
+        if not favorite:
+            raise ResourceNotFoundException("Could not create favorite")
         return favorite
     
     @staticmethod
@@ -476,7 +483,7 @@ class UserFavoriteMotorcycleService:
         # Check if motorcycle exists
         motorcycle = db.query(models.Motorcycle).filter(models.Motorcycle.id == motorcycle_id).first()
         if not motorcycle:
-            raise ValueError("Motorcycle not found")
+            raise ResourceNotFoundException("Motorcycle not found")
         
         # Check current favorite status
         is_currently_favorite = UserFavoriteMotorcycleRepository.is_favorite(db, user_id, motorcycle_id)

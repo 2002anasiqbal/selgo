@@ -16,7 +16,8 @@ from ..services.services import (
     BoatImageService, 
     BoatRatingService, 
     BoatFixDoneRequestService,
-    LoanEstimateService
+    LoanEstimateService,
+    ResourceNotFoundException
 )
 from ..models.boat_schemas import (
     UserFavoriteCreate,
@@ -113,10 +114,10 @@ async def get_boat_category(
     """
     Get a specific boat category by ID.
     """
-    category = BoatCategoryService.get_category_by_id(db, category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return category
+    try:
+        return BoatCategoryService.get_category_by_id(db, category_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.get("/categories/{category_id}/subcategories", response_model=List[BoatCategoryResponse])
 async def get_subcategories(
@@ -139,10 +140,10 @@ async def update_boat_category(
     Update a boat category.
     This endpoint is typically restricted to admin users.
     """
-    updated_category = BoatCategoryService.update_category(db, category_id, category)
-    if not updated_category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return updated_category
+    try:
+        return BoatCategoryService.update_category(db, category_id, category)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_boat_category(
@@ -154,10 +155,11 @@ async def delete_boat_category(
     Delete a boat category.
     This endpoint is typically restricted to admin users.
     """
-    success = BoatCategoryService.delete_category(db, category_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return {"detail": "Category deleted successfully"}
+    try:
+        BoatCategoryService.delete_category(db, category_id)
+        return {"detail": "Category deleted successfully"}
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 # ==================== Boat Feature Routes ====================
@@ -193,10 +195,10 @@ async def get_boat_feature(
     """
     Get a specific boat feature by ID.
     """
-    feature = BoatFeatureService.get_feature_by_id(db, feature_id)
-    if not feature:
-        raise HTTPException(status_code=404, detail="Feature not found")
-    return feature
+    try:
+        return BoatFeatureService.get_feature_by_id(db, feature_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.put("/features/{feature_id}", response_model=BoatFeatureResponse)
 async def update_boat_feature(
@@ -209,10 +211,10 @@ async def update_boat_feature(
     Update a boat feature.
     This endpoint is typically restricted to admin users.
     """
-    updated_feature = BoatFeatureService.update_feature(db, feature_id, feature)
-    if not updated_feature:
-        raise HTTPException(status_code=404, detail="Feature not found")
-    return updated_feature
+    try:
+        return BoatFeatureService.update_feature(db, feature_id, feature)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/features/{feature_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_boat_feature(
@@ -224,10 +226,11 @@ async def delete_boat_feature(
     Delete a boat feature.
     This endpoint is typically restricted to admin users.
     """
-    success = BoatFeatureService.delete_feature(db, feature_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Feature not found")
-    return {"detail": "Feature deleted successfully"}
+    try:
+        BoatFeatureService.delete_feature(db, feature_id)
+        return {"detail": "Feature deleted successfully"}
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 # ==================== Boat Routes ====================
 
@@ -466,10 +469,10 @@ async def update_boat(
     """
     Update a specific boat listing.
     """
-    updated_boat = BoatService.update_boat(db, boat_id, boat, current_user_id)
-    if not updated_boat:
-        raise HTTPException(status_code=404, detail="Boat not found or you don't have permission to update it")
-    return updated_boat
+    try:
+        return BoatService.update_boat(db, boat_id, boat, current_user_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/{boat_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_boat(
@@ -480,10 +483,11 @@ async def delete_boat(
     """
     Delete a specific boat listing.
     """
-    success = BoatService.delete_boat(db, boat_id, current_user_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Boat not found or you don't have permission to delete it")
-    return {"detail": "Boat deleted successfully"}
+    try:
+        BoatService.delete_boat(db, boat_id, current_user_id)
+        return {"detail": "Boat deleted successfully"}
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 # ==================== Boat Image Routes ====================
 
@@ -497,10 +501,10 @@ async def add_boat_image(
     """
     Add an image to a boat listing.
     """
-    image = BoatImageService.add_image(db, boat_id, image_data, current_user_id)
-    if not image:
-        raise HTTPException(status_code=404, detail="Boat not found or you don't have permission to add images")
-    return image
+    try:
+        return BoatImageService.add_image(db, boat_id, image_data, current_user_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.get("/{boat_id}/images", response_model=List[BoatImageResponse])
 async def get_boat_images(
@@ -521,10 +525,11 @@ async def delete_boat_image(
     """
     Delete a specific boat image.
     """
-    success = BoatImageService.delete_image(db, image_id, current_user_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Image not found or you don't have permission to delete it")
-    return {"detail": "Image deleted successfully"}
+    try:
+        BoatImageService.delete_image(db, image_id, current_user_id)
+        return {"detail": "Image deleted successfully"}
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 # ==================== File Upload Route for Boat Images ====================
 
@@ -573,10 +578,10 @@ async def create_boat_rating(
     if rating.boat_id != boat_id:
         raise HTTPException(status_code=400, detail="Boat ID in path and body do not match")
     
-    boat_rating = BoatRatingService.create_rating(db, rating, current_user_id)
-    if not boat_rating:
-        raise HTTPException(status_code=404, detail="Boat not found")
-    return boat_rating
+    try:
+        return BoatRatingService.create_rating(db, rating, current_user_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/{boat_id}/ratings", response_model=List[BoatRatingResponse])
@@ -600,10 +605,11 @@ async def delete_boat_rating(
     """
     Delete a specific boat rating.
     """
-    success = BoatRatingService.delete_rating(db, rating_id, current_user_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Rating not found or you don't have permission to delete it")
-    return {"detail": "Rating deleted successfully"}
+    try:
+        BoatRatingService.delete_rating(db, rating_id, current_user_id)
+        return {"detail": "Rating deleted successfully"}
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 # ==================== Fix Done Request Routes ====================
 
@@ -644,10 +650,11 @@ async def create_fix_done_request(
     logger.info(f"Processing fix request for boat ID: {boat_id}, user ID: {current_user_id}")
     
     # Check if the boat exists
-    boat = BoatService.get_boat_by_id(db, boat_id)
-    if not boat:
+    try:
+        boat = BoatService.get_boat_by_id(db, boat_id)
+    except ResourceNotFoundException as e:
         logger.error(f"Boat with ID {boat_id} not found")
-        raise HTTPException(status_code=404, detail="Boat not found")
+        raise HTTPException(status_code=404, detail=str(e))
     
     logger.info(f"Boat found: {boat.id}, owner: {boat.user_id}")
     
@@ -719,13 +726,10 @@ async def update_fix_done_request_status(
     """
     Update the status of a "Fix Done" request.
     """
-    updated_request = BoatFixDoneRequestService.update_request_status(db, request_id, status_update, current_user_id)
-    if not updated_request:
-        raise HTTPException(
-            status_code=404, 
-            detail="Request not found or you don't have permission to update its status"
-        )
-    return updated_request
+    try:
+        return BoatFixDoneRequestService.update_request_status(db, request_id, status_update, current_user_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 # ==================== Loan Estimate Route ====================
 
@@ -1037,11 +1041,11 @@ async def get_boat(
     """
     Get a specific boat listing by ID.
     """
-    boat = BoatService.get_boat_by_id(db, boat_id, increment_view)
-    if not boat:
-        raise HTTPException(status_code=404, detail="Boat not found")
-    
-    avg_rating = BoatRatingService.get_avg_rating(db, boat_id)
+    try:
+        boat = BoatService.get_boat_by_id(db, boat_id, increment_view)
+        avg_rating = BoatRatingService.get_avg_rating(db, boat_id)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
     
     response_dict = {
         "id": boat.id,

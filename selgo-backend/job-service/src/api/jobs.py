@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..database.database import get_db
-from ..services.job_service import JobService
+from ..services.job_service import JobService, ResourceNotFoundException
 from sqlalchemy import func, desc
 from ..models.schemas import (
     JobStatisticsResponse, FilterOptionsResponse, JobCategoryResponse,
@@ -131,8 +131,11 @@ def get_job_by_id(
     db: Session = Depends(get_db)
 ):
     """Get job by ID and increment view count."""
-    # For anonymous access, pass None for user_token
-    return job_service.get_job_by_id(db, job_id, None)
+    try:
+        # For anonymous access, pass None for user_token
+        return job_service.get_job_by_id(db, job_id, None)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.get("/slug/{slug}", response_model=JobResponse)
 def get_job_by_slug(
@@ -140,8 +143,11 @@ def get_job_by_slug(
     db: Session = Depends(get_db)
 ):
     """Get job by slug and increment view count."""
-    # For anonymous access, pass None for user_token
-    return job_service.get_job_by_slug(db, slug, None)
+    try:
+        # For anonymous access, pass None for user_token
+        return job_service.get_job_by_slug(db, slug, None)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.get("/{job_id}/similar", response_model=List[JobResponse])
 def get_similar_jobs(
@@ -150,7 +156,10 @@ def get_similar_jobs(
     db: Session = Depends(get_db)
 ):
     """Get similar jobs to the given job."""
-    return job_service.get_similar_jobs(db, job_id, limit)
+    try:
+        return job_service.get_similar_jobs(db, job_id, limit)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.put("/{job_id}", response_model=JobResponse)
 async def update_job(
@@ -170,8 +179,11 @@ async def delete_job(
     current_user: dict = Depends(get_current_user)
 ):
     """Delete job posting."""
-    mock_token = "mock_token"  # In production, extract from request
-    return job_service.delete_job(db, job_id, mock_token)
+    try:
+        mock_token = "mock_token"  # In production, extract from request
+        return job_service.delete_job(db, job_id, mock_token)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.post("/{job_id}/save", response_model=MessageResponse)
 async def save_job(
@@ -190,8 +202,11 @@ async def unsave_job(
     current_user: dict = Depends(get_current_user)
 ):
     """Remove saved job for user."""
-    mock_token = "mock_token"  # In production, extract from request
-    return job_service.unsave_job(db, job_id, mock_token)
+    try:
+        mock_token = "mock_token"  # In production, extract from request
+        return job_service.unsave_job(db, job_id, mock_token)
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.get("/statistics", response_model=JobStatisticsResponse)
 def get_job_statistics(db: Session = Depends(get_db)):

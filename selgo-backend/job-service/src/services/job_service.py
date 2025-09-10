@@ -12,6 +12,9 @@ from ..utils.auth_utils import get_user_from_token
 from fastapi import HTTPException, status
 import logging
 
+class ResourceNotFoundException(Exception):
+    pass
+
     
 from sqlalchemy import func, desc
 from ..models.schemas import (
@@ -58,10 +61,7 @@ class JobService:
         """Get job by ID and increment view count."""
         job = self.job_repo.get_job_by_id(db, job_id)
         if not job:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Job not found"
-            )
+            raise ResourceNotFoundException("Job not found")
         
         # Track view if user is provided
         user_id = None
@@ -81,10 +81,7 @@ class JobService:
         """Get job by slug and increment view count."""
         job = self.job_repo.get_job_by_slug(db, slug)
         if not job:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Job not found"
-            )
+            raise ResourceNotFoundException("Job not found")
         
         # Track view if user is provided
         user_id = None
@@ -172,10 +169,7 @@ class JobService:
         try:
             job = self.job_repo.get_job_by_id(db, job_id)
             if not job:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Job not found"
-                )
+                raise ResourceNotFoundException("Job not found")
             
             similar_jobs = self.job_repo.get_similar_jobs(db, job, limit)
             return [JobResponse.model_validate(job) for job in similar_jobs]
@@ -196,10 +190,9 @@ class JobService:
             # Get job and verify ownership
             job = self.job_repo.get_job_by_id(db, job_id)
             if not job:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Job not found"
-                )
+                raise ResourceNotFoundException("Job not found")
+                raise ResourceNotFoundException("Job not found")
+                raise ResourceNotFoundException("Job not found")
             
             if job.posted_by != user_id:
                 raise HTTPException(
@@ -283,8 +276,8 @@ class JobService:
             success = self.job_repo.save_job(db, job_id, user_id)
             if success:
                 return MessageResponse(message="Job saved successfully")
-            else:
-                return MessageResponse(message="Job already saved")
+
+            return MessageResponse(message="Job already saved")
                 
         except HTTPException:
             raise
@@ -304,11 +297,8 @@ class JobService:
             success = self.job_repo.unsave_job(db, job_id, user_id)
             if success:
                 return MessageResponse(message="Job removed from saved")
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Saved job not found"
-                )
+
+            raise ResourceNotFoundException("Saved job not found")
                 
         except HTTPException:
             raise

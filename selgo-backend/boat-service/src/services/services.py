@@ -39,14 +39,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class ResourceNotFoundException(Exception):
+    pass
+
 class BoatCategoryService:
     @staticmethod
     def create_category(db: Session, category_data: BoatCategoryCreate) -> BoatCategory:
         return BoatCategoryRepository.create(db, category_data.dict())
     
     @staticmethod
-    def get_category_by_id(db: Session, category_id: int) -> Optional[BoatCategory]:
-        return BoatCategoryRepository.get_by_id(db, category_id)
+    def get_category_by_id(db: Session, category_id: int) -> BoatCategory:
+        category = BoatCategoryRepository.get_by_id(db, category_id)
+        if not category:
+            raise ResourceNotFoundException("Category not found")
+        return category
     
     @staticmethod
     def get_all_categories(db: Session, skip: int = 0, limit: int = 100) -> List[BoatCategory]:
@@ -65,12 +71,16 @@ class BoatCategoryService:
         return BoatCategoryRepository.get_by_parent_id(db, parent_id)
     
     @staticmethod
-    def update_category(db: Session, category_id: int, category_data: BoatCategoryCreate) -> Optional[BoatCategory]:
-        return BoatCategoryRepository.update(db, category_id, category_data.dict())
+    def update_category(db: Session, category_id: int, category_data: BoatCategoryCreate) -> BoatCategory:
+        category = BoatCategoryRepository.update(db, category_id, category_data.dict())
+        if not category:
+            raise ResourceNotFoundException("Category not found")
+        return category
     
     @staticmethod
-    def delete_category(db: Session, category_id: int) -> bool:
-        return BoatCategoryRepository.delete(db, category_id)
+    def delete_category(db: Session, category_id: int):
+        if not BoatCategoryRepository.delete(db, category_id):
+            raise ResourceNotFoundException("Category not found")
 
 class BoatFeatureService:
     @staticmethod
@@ -78,20 +88,27 @@ class BoatFeatureService:
         return BoatFeatureRepository.create(db, feature_data.dict())
     
     @staticmethod
-    def get_feature_by_id(db: Session, feature_id: int) -> Optional[BoatFeature]:
-        return BoatFeatureRepository.get_by_id(db, feature_id)
+    def get_feature_by_id(db: Session, feature_id: int) -> BoatFeature:
+        feature = BoatFeatureRepository.get_by_id(db, feature_id)
+        if not feature:
+            raise ResourceNotFoundException("Feature not found")
+        return feature
     
     @staticmethod
     def get_all_features(db: Session, skip: int = 0, limit: int = 100) -> List[BoatFeature]:
         return BoatFeatureRepository.get_all(db, skip, limit)
     
     @staticmethod
-    def update_feature(db: Session, feature_id: int, feature_data: BoatFeatureCreate) -> Optional[BoatFeature]:
-        return BoatFeatureRepository.update(db, feature_id, feature_data.dict())
+    def update_feature(db: Session, feature_id: int, feature_data: BoatFeatureCreate) -> BoatFeature:
+        feature = BoatFeatureRepository.update(db, feature_id, feature_data.dict())
+        if not feature:
+            raise ResourceNotFoundException("Feature not found")
+        return feature
     
     @staticmethod
-    def delete_feature(db: Session, feature_id: int) -> bool:
-        return BoatFeatureRepository.delete(db, feature_id)
+    def delete_feature(db: Session, feature_id: int):
+        if not BoatFeatureRepository.delete(db, feature_id):
+            raise ResourceNotFoundException("Feature not found")
 
 class BoatService:
     
@@ -168,11 +185,13 @@ class BoatService:
         return query.limit(limit).all()
     
     @staticmethod
-    def get_boat_by_id(db: Session, boat_id: int, increment_view: bool = False) -> Optional[Boat]:
+    def get_boat_by_id(db: Session, boat_id: int, increment_view: bool = False) -> Boat:
         boat = BoatRepository.get_by_id(db, boat_id)
+        if not boat:
+            raise ResourceNotFoundException("Boat not found")
         
         # Increment view count if requested
-        if boat and increment_view:
+        if increment_view:
             boat = BoatRepository.increment_view_count(db, boat_id)
         
         return boat
@@ -198,11 +217,11 @@ class BoatService:
         return BoatRepository.get_recommended_boats(db, limit)
     
     @staticmethod
-    def update_boat(db: Session, boat_id: int, boat_data: BoatUpdate, user_id: int) -> Optional[Boat]:
+    def update_boat(db: Session, boat_id: int, boat_data: BoatUpdate, user_id: int) -> Boat:
         # Check boat exists and belongs to user
         boat = BoatRepository.get_by_id(db, boat_id)
         if not boat or boat.user_id != user_id:
-            return None
+            raise ResourceNotFoundException("Boat not found or permission denied")
         
         # Get features if provided
         features = None
@@ -211,51 +230,59 @@ class BoatService:
         
         # Update the boat
         boat_dict = boat_data.dict(exclude_unset=True, exclude={'features'})
-        return BoatRepository.update(db, boat_id, boat_dict, features)
+        updated_boat = BoatRepository.update(db, boat_id, boat_dict, features)
+        if not updated_boat:
+            raise ResourceNotFoundException("Boat not found")
+        return updated_boat
     
     @staticmethod
-    def delete_boat(db: Session, boat_id: int, user_id: int) -> bool:
+    def delete_boat(db: Session, boat_id: int, user_id: int):
         # Check boat exists and belongs to user
         boat = BoatRepository.get_by_id(db, boat_id)
         if not boat or boat.user_id != user_id:
-            return False
+            raise ResourceNotFoundException("Boat not found or permission denied")
         
-        return BoatRepository.delete(db, boat_id)
+        if not BoatRepository.delete(db, boat_id):
+            raise ResourceNotFoundException("Boat not found")
 
 class BoatImageService:
     @staticmethod
-    def add_image(db: Session, boat_id: int, image_data: BoatImageCreate, user_id: int) -> Optional[BoatImage]:
+    def add_image(db: Session, boat_id: int, image_data: BoatImageCreate, user_id: int) -> BoatImage:
         # Check boat exists and belongs to user
         boat = BoatRepository.get_by_id(db, boat_id)
         if not boat or boat.user_id != user_id:
-            return None
+            raise ResourceNotFoundException("Boat not found or permission denied")
         
-        return BoatImageRepository.create(db, boat_id, image_data.dict())
+        image = BoatImageRepository.create(db, boat_id, image_data.dict())
+        if not image:
+            raise HTTPException(status_code=500, detail="Failed to create image")
+        return image
     
     @staticmethod
     def get_images(db: Session, boat_id: int) -> List[BoatImage]:
         return BoatImageRepository.get_by_boat_id(db, boat_id)
     
     @staticmethod
-    def delete_image(db: Session, image_id: int, user_id: int) -> bool:
+    def delete_image(db: Session, image_id: int, user_id: int):
         # Check image exists and belongs to user's boat
         image = BoatImageRepository.get_by_id(db, image_id)
         if not image:
-            return False
+            raise ResourceNotFoundException("Image not found")
         
         boat = BoatRepository.get_by_id(db, image.boat_id)
         if not boat or boat.user_id != user_id:
-            return False
+            raise ResourceNotFoundException("Boat not found or permission denied")
         
-        return BoatImageRepository.delete(db, image_id)
+        if not BoatImageRepository.delete(db, image_id):
+            raise ResourceNotFoundException("Image not found")
 
 class BoatRatingService:
     @staticmethod
-    def create_rating(db: Session, rating_data: BoatRatingCreate, user_id: int) -> Optional[BoatRating]:
+    def create_rating(db: Session, rating_data: BoatRatingCreate, user_id: int) -> BoatRating:
         # Check if boat exists
         boat = BoatRepository.get_by_id(db, rating_data.boat_id)
         if not boat:
-            return None
+            raise ResourceNotFoundException("Boat not found")
         
         # Check if user has already rated this boat
         existing_ratings = BoatRatingRepository.get_by_boat_id(db, rating_data.boat_id)
@@ -281,25 +308,26 @@ class BoatRatingService:
         return BoatRatingRepository.get_avg_rating(db, boat_id)
     
     @staticmethod
-    def delete_rating(db: Session, rating_id: int, user_id: int) -> bool:
+    def delete_rating(db: Session, rating_id: int, user_id: int):
         # Check rating exists and belongs to user
         rating = BoatRatingRepository.get_by_id(db, rating_id)
         if not rating or rating.user_id != user_id:
-            return False
+            raise ResourceNotFoundException("Rating not found or permission denied")
         
-        return BoatRatingRepository.delete(db, rating_id)
+        if not BoatRatingRepository.delete(db, rating_id):
+            raise ResourceNotFoundException("Rating not found")
 
 class BoatFixDoneRequestService:
     @staticmethod
-    def create_request(db: Session, request_data: BoatFixDoneRequestCreate, buyer_id: int) -> Optional[BoatFixDoneRequest]:
+    def create_request(db: Session, request_data: BoatFixDoneRequestCreate, buyer_id: int) -> BoatFixDoneRequest:
         # Check if boat exists
         boat = BoatRepository.get_by_id(db, request_data.boat_id)
         if not boat:
-            return None
+            raise ResourceNotFoundException("Boat not found")
         
         # Ensure buyer is not the seller
         if boat.user_id == buyer_id:
-            return None
+            raise HTTPException(status_code=400, detail="You cannot create a fix request for your own boat")
         
         # Create the request
         request_dict = request_data.dict()
@@ -310,8 +338,11 @@ class BoatFixDoneRequestService:
         return BoatFixDoneRequestRepository.create(db, request_dict)
     
     @staticmethod
-    def get_request_by_id(db: Session, request_id: int) -> Optional[BoatFixDoneRequest]:
-        return BoatFixDoneRequestRepository.get_by_id(db, request_id)
+    def get_request_by_id(db: Session, request_id: int) -> BoatFixDoneRequest:
+        request = BoatFixDoneRequestRepository.get_by_id(db, request_id)
+        if not request:
+            raise ResourceNotFoundException("Request not found")
+        return request
     
     @staticmethod
     def get_requests_by_boat_id(db: Session, boat_id: int) -> List[BoatFixDoneRequest]:
@@ -331,25 +362,25 @@ class BoatFixDoneRequestService:
         request_id: int, 
         status_update: BoatFixDoneRequestStatusUpdate, 
         user_id: int
-    ) -> Optional[BoatFixDoneRequest]:
+    ) -> BoatFixDoneRequest:
         # Check request exists
         request = BoatFixDoneRequestRepository.get_by_id(db, request_id)
         if not request:
-            return None
+            raise ResourceNotFoundException("Request not found")
         
         # Validate if user is authorized (either buyer or seller depending on the status change)
         if status_update.status == FixRequestStatus.APPROVED or status_update.status == FixRequestStatus.DECLINED:
             # Only seller can approve or decline
             if request.seller_id != user_id:
-                return None
+                raise HTTPException(status_code=403, detail="Not authorized")
         elif status_update.status == FixRequestStatus.CANCELLED:
             # Only buyer can cancel
             if request.buyer_id != user_id:
-                return None
+                raise HTTPException(status_code=403, detail="Not authorized")
         elif status_update.status == FixRequestStatus.COMPLETED:
             # Both buyer and seller can mark as completed
             if request.buyer_id != user_id and request.seller_id != user_id:
-                return None
+                raise HTTPException(status_code=403, detail="Not authorized")
         
         # Validate status transitions
         valid_transitions = {
@@ -361,9 +392,12 @@ class BoatFixDoneRequestService:
         }
         
         if status_update.status not in valid_transitions.get(request.status, []):
-            return None
+            raise HTTPException(status_code=400, detail="Invalid status transition")
         
-        return BoatFixDoneRequestRepository.update_status(db, request_id, status_update.status)
+        updated_request = BoatFixDoneRequestRepository.update_status(db, request_id, status_update.status)
+        if not updated_request:
+            raise ResourceNotFoundException("Request not found")
+        return updated_request
 
 class LoanEstimateService:
     @staticmethod

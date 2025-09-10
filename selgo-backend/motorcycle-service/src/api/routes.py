@@ -10,7 +10,7 @@ import uuid
 import traceback
 
 from ..database.database import get_db
-from ..services.services import MotorcycleService, MotorcycleCategoryService
+from ..services.services import MotorcycleService, MotorcycleCategoryService, ResourceNotFoundException
 from ..models.schemas import (
     Motorcycle, MotorcycleCreate, MotorcycleUpdate, MotorcycleListResponse,
     MotorcycleSearchFilters, MapFilterRequest, PaginatedResponse,
@@ -693,11 +693,11 @@ async def get_motorcycle_detail(
     Show bike detail page including specs, images, seller info, and contact button
     URL: /api/motorcycles/{id}
     """
-    motorcycle = MotorcycleService.get_motorcycle(db, motorcycle_id)
-    if not motorcycle:
-        raise HTTPException(status_code=404, detail="Motorcycle not found")
-    
-    return motorcycle
+    try:
+        motorcycle = MotorcycleService.get_motorcycle(db, motorcycle_id)
+        return motorcycle
+    except ResourceNotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 # Import the new services
 from ..services.services import UserFavoriteMotorcycleService, UserFavoriteMotorcycleRepository
 

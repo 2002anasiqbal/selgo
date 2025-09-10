@@ -188,6 +188,15 @@ const authService = {
     } catch (error) {
       throw error.response?.data || error;
     }
+  },
+
+  handleGoogleCallback: async (callbackData) => {
+    try {
+      const response = await authClient.get(`/google/callback?code=${callbackData.code}&state=${callbackData.state}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
   }
 };
 

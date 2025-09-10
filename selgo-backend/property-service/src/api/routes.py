@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 
 from ..database.database import get_database
-from ..services.property_service_rebuilt import PropertyCategoryService, PropertyService, ResourceNotFoundException
+from ..services.property_services import PropertyCategoryService, PropertyService, ResourceNotFoundException
 from ..models.property_schemas import (
     PropertyCategoryResponse, PropertyResponse,
     PropertyCreate, PropertyUpdate, PropertyFilterParams, PaginatedResponse

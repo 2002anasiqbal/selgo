@@ -151,6 +151,17 @@ const Login = () => {
         </div>
 
          <div className="max-w-sm w-full px-8">
+          <div className="text-center mb-10">
+            <Link href="/">
+              <Image
+                src="/assets/logo.svg"
+                alt="Selgo"
+                width={120}
+                height={40}
+                className="mx-auto"
+              />
+            </Link>
+          </div>
           <h2 className="text-2xl font-semibold mb-6 text-gray-800">Sign in</h2>
 
           {/* Social Logins */}
@@ -213,18 +224,18 @@ const Login = () => {
              {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
             {/* Forget Password */}
-         <div className="flex justify-end items-center">
-              <a
-                href="#"
+            <div className="flex justify-end items-center">
+              <Link
+                href="/routes/auth/forgot-password"
                 className="text-sm underline text-gray-600 hover:underline"
               >
                 Forget your password?
-              </a>
+              </Link>
             </div>
 
             <button
               type="submit"
-              className="w-1/3 bg-teal-400 text-white py-2 rounded-lg mt-4 hover:bg-teal-500 transition"
+              className="w-full bg-teal-500 text-white py-2 rounded-lg mt-4 hover:bg-teal-600 transition"
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign in"}
