@@ -197,6 +197,33 @@ const authService = {
     } catch (error) {
       throw error.response?.data || error;
     }
+  },
+
+  verifyEmail: async (token) => {
+    try {
+      const response = await authClient.post(`/verify/email/${token}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  sendPhoneVerification: async () => {
+    try {
+      const response = await authClient.post('/verify/phone/send');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  verifyPhone: async (otpData) => {
+    try {
+      const response = await authClient.post('/verify/phone', otpData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
   }
 };
 
