@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, or_, asc, desc
 from geoalchemy2 import Geometry
 from geoalchemy2.functions import ST_Distance, ST_Transform, ST_SetSRID, ST_MakePoint
-from typing import List, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any, Tuple
 from ..models.models import PropertyCategory, Property, PropertyImage, PropertyFacility, Facility, PropertyMessage, UserFavorite
 from ..models.property_schemas import PropertyFilterParams, GeoPoint
 import logging
@@ -19,7 +19,7 @@ class PropertyCategoryRepository:
         return db_category
 
     @staticmethod
-    def get_by_id(db: Session, category_id: int) -> PropertyCategory:
+    def get_by_id(db: Session, category_id: int) -> Optional[PropertyCategory]:
         return db.query(PropertyCategory).filter(PropertyCategory.id == category_id).first()
 
     @staticmethod
@@ -27,7 +27,7 @@ class PropertyCategoryRepository:
         return db.query(PropertyCategory).offset(skip).limit(limit).all()
 
     @staticmethod
-    def update(db: Session, category_id: int, category_data: Dict[str, Any]) -> PropertyCategory:
+    def update(db: Session, category_id: int, category_data: Dict[str, Any]) -> Optional[PropertyCategory]:
         db_category = db.query(PropertyCategory).filter(PropertyCategory.id == category_id).first()
         if db_category:
             for key, value in category_data.items():
@@ -60,56 +60,32 @@ class PropertyRepository:
         return db_property
 
     @staticmethod
-    def get_by_id(db: Session, property_id: str) -> Property:
+    def get_by_id(db: Session, property_id: str) -> Optional[Property]:
         return db.query(Property).filter(Property.id == property_id).first()
 
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100) -> List[Property]:
-        return db.query(Property).offset(skip).limit(limit).all()
+    def get_all_with_filters(db: Session, filters: Dict[str, Any]) -> List[Property]:
+        query = db.query(Property)
+
+        if filters.get("property_type"):
+            query = query.filter(Property.property_type == filters["property_type"])
+        if filters.get("min_price"):
+            query = query.filter(Property.price >= filters["min_price"])
+        if filters.get("max_price"):
+            query = query.filter(Property.price <= filters["max_price"])
+        if filters.get("min_bedrooms"):
+            query = query.filter(Property.bedrooms >= filters["min_bedrooms"])
+        if filters.get("max_bedrooms"):
+            query = query.filter(Property.bedrooms <= filters["max_bedrooms"])
+        if filters.get("min_bathrooms"):
+            query = query.filter(Property.bathrooms >= filters["min_bathrooms"])
+        if filters.get("max_bathrooms"):
+            query = query.filter(Property.bathrooms <= filters["max_bathrooms"])
+
+        return query.all()
 
     @staticmethod
-    def filter_properties(db: Session, filters: PropertyFilterParams) -> Tuple[List[Property], int]:
-        query = db.query(Property).filter(Property.status == "active")
-
-        if filters.category_id:
-            query = query.filter(Property.category_id == filters.category_id)
-
-        if filters.property_type:
-            query = query.filter(Property.property_type == filters.property_type)
-
-        if filters.price_min is not None:
-            query = query.filter(Property.price >= filters.price_min)
-
-        if filters.price_max is not None:
-            query = query.filter(Property.price <= filters.price_max)
-
-        if filters.bedrooms_min is not None:
-            query = query.filter(Property.bedrooms >= filters.bedrooms_min)
-
-        if filters.bathrooms_min is not None:
-            query = query.filter(Property.bathrooms >= filters.bathrooms_min)
-
-        if filters.search_term:
-            search_term = f"%{filters.search_term}%"
-            query = query.filter(
-                or_(
-                    Property.title.ilike(search_term),
-                    Property.description.ilike(search_term),
-                    Property.address.ilike(search_term),
-                    Property.city.ilike(search_term),
-                )
-            )
-
-        total = query.count()
-
-        query = query.offset(filters.offset).limit(filters.limit)
-
-        properties = query.all()
-
-        return properties, total
-
-    @staticmethod
-    def update(db: Session, property_id: str, property_data: Dict[str, Any]) -> Property:
+    def update(db: Session, property_id: str, property_data: Dict[str, Any]) -> Optional[Property]:
         db_property = db.query(Property).filter(Property.id == property_id).first()
 
         if not db_property:
@@ -138,7 +114,7 @@ class PropertyRepository:
         return False
 
     @staticmethod
-    def increment_view_count(db: Session, property_id: str) -> Property:
+    def increment_view_count(db: Session, property_id: str) -> Optional[Property]:
         db_property = db.query(Property).filter(Property.id == property_id).first()
         if db_property:
             db_property.views_count += 1

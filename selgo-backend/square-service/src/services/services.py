@@ -26,20 +26,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ResourceNotFoundException(Exception):
-    pass
-
 class ItemCategoryService:
     @staticmethod
     def create_category(db: Session, category_data: ItemCategoryCreate) -> ItemCategory:
         return ItemCategoryRepository.create(db, category_data.dict())
 
     @staticmethod
-    def get_category_by_id(db: Session, category_id: int) -> ItemCategory:
-        category = ItemCategoryRepository.get_by_id(db, category_id)
-        if not category:
-            raise ResourceNotFoundException("Category not found")
-        return category
+    def get_category_by_id(db: Session, category_id: int) -> Optional[ItemCategory]:
+        return ItemCategoryRepository.get_by_id(db, category_id)
 
     @staticmethod
     def get_all_categories(db: Session, skip: int = 0, limit: int = 100) -> List[ItemCategory]:
@@ -58,16 +52,12 @@ class ItemCategoryService:
         return ItemCategoryRepository.get_by_parent_id(db, parent_id)
 
     @staticmethod
-    def update_category(db: Session, category_id: int, category_data: ItemCategoryCreate) -> ItemCategory:
-        category = ItemCategoryRepository.update(db, category_id, category_data.dict())
-        if not category:
-            raise ResourceNotFoundException("Category not found")
-        return category
+    def update_category(db: Session, category_id: int, category_data: ItemCategoryCreate) -> Optional[ItemCategory]:
+        return ItemCategoryRepository.update(db, category_id, category_data.dict())
 
     @staticmethod
-    def delete_category(db: Session, category_id: int):
-        if not ItemCategoryRepository.delete(db, category_id):
-            raise ResourceNotFoundException("Category not found")
+    def delete_category(db: Session, category_id: int) -> bool:
+        return ItemCategoryRepository.delete(db, category_id)
 
 class ItemService:
     @staticmethod
@@ -115,12 +105,10 @@ class ItemService:
         return query.limit(limit).all()
 
     @staticmethod
-    def get_item_by_id(db: Session, item_id: int, increment_view: bool = False) -> Item:
+    def get_item_by_id(db: Session, item_id: int, increment_view: bool = False) -> Optional[Item]:
         item = ItemRepository.get_by_id(db, item_id)
-        if not item:
-            raise ResourceNotFoundException("Item not found")
 
-        if increment_view:
+        if item and increment_view:
             item = ItemRepository.increment_view_count(db, item_id)
 
         return item
@@ -138,61 +126,53 @@ class ItemService:
         return ItemRepository.get_recommended_items(db, limit)
 
     @staticmethod
-    def update_item(db: Session, item_id: int, item_data: ItemUpdate, user_id: int) -> Item:
+    def update_item(db: Session, item_id: int, item_data: ItemUpdate, user_id: int) -> Optional[Item]:
         item = ItemRepository.get_by_id(db, item_id)
         if not item or item.user_id != user_id:
-            raise ResourceNotFoundException("Item not found or permission denied")
+            return None
 
         item_dict = item_data.dict(exclude_unset=True)
-        updated_item = ItemRepository.update(db, item_id, item_dict)
-        if not updated_item:
-            raise ResourceNotFoundException("Item not found")
-        return updated_item
+        return ItemRepository.update(db, item_id, item_dict)
 
     @staticmethod
-    def delete_item(db: Session, item_id: int, user_id: int):
+    def delete_item(db: Session, item_id: int, user_id: int) -> bool:
         item = ItemRepository.get_by_id(db, item_id)
         if not item or item.user_id != user_id:
-            raise ResourceNotFoundException("Item not found or permission denied")
+            return False
 
-        if not ItemRepository.delete(db, item_id):
-            raise ResourceNotFoundException("Item not found")
+        return ItemRepository.delete(db, item_id)
 
 class ItemImageService:
     @staticmethod
-    def add_image(db: Session, item_id: int, image_data: ItemImageCreate, user_id: int) -> ItemImage:
+    def add_image(db: Session, item_id: int, image_data: ItemImageCreate, user_id: int) -> Optional[ItemImage]:
         item = ItemRepository.get_by_id(db, item_id)
         if not item or item.user_id != user_id:
-            raise ResourceNotFoundException("Item not found or permission denied")
+            return None
 
-        image = ItemImageRepository.create(db, item_id, image_data.dict())
-        if not image:
-            raise HTTPException(status_code=500, detail="Failed to create image")
-        return image
+        return ItemImageRepository.create(db, item_id, image_data.dict())
 
     @staticmethod
     def get_images(db: Session, item_id: int) -> List[ItemImage]:
         return ItemImageRepository.get_by_item_id(db, item_id)
 
     @staticmethod
-    def delete_image(db: Session, image_id: int, user_id: int):
+    def delete_image(db: Session, image_id: int, user_id: int) -> bool:
         image = ItemImageRepository.get_by_id(db, image_id)
         if not image:
-            raise ResourceNotFoundException("Image not found")
+            return False
 
         item = ItemRepository.get_by_id(db, image.item_id)
         if not item or item.user_id != user_id:
-            raise ResourceNotFoundException("Item not found or permission denied")
+            return False
 
-        if not ItemImageRepository.delete(db, image_id):
-            raise ResourceNotFoundException("Image not found")
+        return ItemImageRepository.delete(db, image_id)
 
 class ItemRatingService:
     @staticmethod
-    def create_rating(db: Session, rating_data: ItemRatingCreate, user_id: int) -> ItemRating:
+    def create_rating(db: Session, rating_data: ItemRatingCreate, user_id: int) -> Optional[ItemRating]:
         item = ItemRepository.get_by_id(db, rating_data.item_id)
         if not item:
-            raise ResourceNotFoundException("Item not found")
+            return None
 
         existing_ratings = ItemRatingRepository.get_by_item_id(db, rating_data.item_id)
         for rating in existing_ratings:
@@ -215,13 +195,12 @@ class ItemRatingService:
         return ItemRatingRepository.get_avg_rating(db, item_id)
 
     @staticmethod
-    def delete_rating(db: Session, rating_id: int, user_id: int):
+    def delete_rating(db: Session, rating_id: int, user_id: int) -> bool:
         rating = ItemRatingRepository.get_by_id(db, rating_id)
         if not rating or rating.user_id != user_id:
-            raise ResourceNotFoundException("Rating not found or permission denied")
+            return False
 
-        if not ItemRatingRepository.delete(db, rating_id):
-            raise ResourceNotFoundException("Rating not found")
+        return ItemRatingRepository.delete(db, rating_id)
 
 class UserFavoriteService:
     @staticmethod

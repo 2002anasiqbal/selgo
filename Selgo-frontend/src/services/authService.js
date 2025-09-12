@@ -161,69 +161,6 @@ const authService = {
   getStoredUser: () => {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
-  },
-
-  getGoogleLoginUrl: async () => {
-    try {
-      const response = await authClient.get('/google/login');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  forgotPassword: async (emailData) => {
-    try {
-      const response = await authClient.post('/password/forgot', emailData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  resetPassword: async (resetData) => {
-    try {
-      const response = await authClient.post('/password/reset', resetData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  handleGoogleCallback: async (callbackData) => {
-    try {
-      const response = await authClient.get(`/google/callback?code=${callbackData.code}&state=${callbackData.state}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  verifyEmail: async (token) => {
-    try {
-      const response = await authClient.post(`/verify/email/${token}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  sendPhoneVerification: async () => {
-    try {
-      const response = await authClient.post('/verify/phone/send');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  verifyPhone: async (otpData) => {
-    try {
-      const response = await authClient.post('/verify/phone', otpData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
   }
 };
 

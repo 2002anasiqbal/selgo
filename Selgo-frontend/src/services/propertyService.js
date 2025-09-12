@@ -3,6 +3,25 @@ const API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:80
 import { apiClient } from './authService';
 
 const propertyService = {
+  getProperties: async (filters = {}) => {
+    try {
+      // Build query string from filters
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) { // Only add non-empty filters
+          params.append(key, value);
+        }
+      });
+      const queryString = params.toString();
+
+      const response = await apiClient.get(`/properties${queryString ? `?${queryString}` : ''}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      return [];
+    }
+  },
+
   getCategories: async () => {
     try {
       const response = await apiClient.get(`/properties/categories`);
@@ -10,16 +29,6 @@ const propertyService = {
     } catch (error) {
       console.error('Error fetching property categories:', error);
       return [];
-    }
-  },
-
-  filterProperties: async (filters) => {
-    try {
-      const response = await apiClient.post('/properties/filter', filters);
-      return response.data;
-    } catch (error) {
-      console.error('Error filtering properties:', error.response?.data || error);
-      throw error;
     }
   },
 

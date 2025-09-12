@@ -582,15 +582,6 @@ const jobService = {
     }
   },
 
-  createJob: async (jobData) => {
-    try {
-      const response = await jobClient.post('/jobs', jobData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
   // Company Management
 getCompanies: async (params = {}) => {
   try {

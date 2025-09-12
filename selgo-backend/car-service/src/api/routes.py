@@ -10,8 +10,7 @@ from ..services.services import (
     CarImageService,
     CarRatingService,
     LoanEstimateService,
-    UserFavoriteService,
-    ResourceNotFoundException
+    UserFavoriteService
 )
 from ..models.car_schemas import (
     UserFavoriteCreate,
@@ -68,10 +67,10 @@ async def get_car_category(
     category_id: int = Path(..., description="The ID of the category to get"),
     db: Session = Depends(get_db)
 ):
-    try:
-        return CarCategoryService.get_category_by_id(db, category_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    category = CarCategoryService.get_category_by_id(db, category_id)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return category
 
 # ==================== Car Feature Routes ====================
 
@@ -165,10 +164,10 @@ async def update_car(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id)
 ):
-    try:
-        return CarService.update_car(db, car_id, car, current_user_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    updated_car = CarService.update_car(db, car_id, car, current_user_id)
+    if not updated_car:
+        raise HTTPException(status_code=404, detail="Car not found or you don't have permission to update it")
+    return updated_car
 
 @router.delete("/{car_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_car(
@@ -176,11 +175,10 @@ async def delete_car(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id)
 ):
-    try:
-        CarService.delete_car(db, car_id, current_user_id)
-        return {"detail": "Car deleted successfully"}
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    success = CarService.delete_car(db, car_id, current_user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Car not found or you don't have permission to delete it")
+    return {"detail": "Car deleted successfully"}
 
 @router.post("/{car_id}/images", response_model=CarImageResponse, status_code=status.HTTP_201_CREATED)
 async def add_car_image(
@@ -189,10 +187,10 @@ async def add_car_image(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id)
 ):
-    try:
-        return CarImageService.add_image(db, car_id, image_data, current_user_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    image = CarImageService.add_image(db, car_id, image_data, current_user_id)
+    if not image:
+        raise HTTPException(status_code=404, detail="Car not found or you don't have permission to add images")
+    return image
 
 @router.post("/upload-image", response_model=dict)
 async def upload_image(
@@ -229,10 +227,11 @@ async def create_car_rating(
 ):
     if rating.car_id != car_id:
         raise HTTPException(status_code=400, detail="Car ID in path and body do not match")
-    try:
-        return CarRatingService.create_rating(db, rating, current_user_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+
+    car_rating = CarRatingService.create_rating(db, rating, current_user_id)
+    if not car_rating:
+        raise HTTPException(status_code=404, detail="Car not found")
+    return car_rating
 
 @router.post("/loan-estimate", response_model=LoanEstimateResponse)
 async def calculate_loan_estimate(loan_data: LoanEstimateRequest):
@@ -267,11 +266,11 @@ async def get_car(
     increment_view: bool = Query(False, description="Whether to increment the view count"),
     db: Session = Depends(get_db)
 ):
-    try:
-        car = CarService.get_car_by_id(db, car_id, increment_view)
-        avg_rating = CarRatingService.get_avg_rating(db, car_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    car = CarService.get_car_by_id(db, car_id, increment_view)
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+
+    avg_rating = CarRatingService.get_avg_rating(db, car_id)
 
     response_dict = CarResponse.from_orm(car).dict()
     response_dict["avg_rating"] = avg_rating

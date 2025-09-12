@@ -8,8 +8,7 @@ from ..services.services import (
     ItemService,
     ItemImageService,
     ItemRatingService,
-    UserFavoriteService,
-    ResourceNotFoundException
+    UserFavoriteService
 )
 from ..models.item_schemas import (
     UserFavoriteCreate,
@@ -94,10 +93,10 @@ async def update_item(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id)
 ):
-    try:
-        return ItemService.update_item(db, item_id, item, current_user_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    updated_item = ItemService.update_item(db, item_id, item, current_user_id)
+    if not updated_item:
+        raise HTTPException(status_code=404, detail="Item not found or you don't have permission to update it")
+    return updated_item
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(
@@ -105,11 +104,10 @@ async def delete_item(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id)
 ):
-    try:
-        ItemService.delete_item(db, item_id, current_user_id)
-        return {"detail": "Item deleted successfully"}
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    success = ItemService.delete_item(db, item_id, current_user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Item not found or you don't have permission to delete it")
+    return {"detail": "Item deleted successfully"}
 
 @router.post("/{item_id}/images", response_model=ItemImageResponse, status_code=status.HTTP_201_CREATED)
 async def add_item_image(
@@ -118,10 +116,10 @@ async def add_item_image(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id)
 ):
-    try:
-        return ItemImageService.add_image(db, item_id, image_data, current_user_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    image = ItemImageService.add_image(db, item_id, image_data, current_user_id)
+    if not image:
+        raise HTTPException(status_code=404, detail="Item not found or you don't have permission to add images")
+    return image
 
 @router.post("/upload-image", response_model=dict)
 async def upload_image(
@@ -158,10 +156,11 @@ async def create_item_rating(
 ):
     if rating.item_id != item_id:
         raise HTTPException(status_code=400, detail="Item ID in path and body do not match")
-    try:
-        return ItemRatingService.create_rating(db, rating, current_user_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+
+    item_rating = ItemRatingService.create_rating(db, rating, current_user_id)
+    if not item_rating:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item_rating
 
 @router.post("/favorites/toggle", response_model=FavoriteToggleResponse)
 async def toggle_favorite(
@@ -192,11 +191,11 @@ async def get_item(
     increment_view: bool = Query(False, description="Whether to increment the view count"),
     db: Session = Depends(get_db)
 ):
-    try:
-        item = ItemService.get_item_by_id(db, item_id, increment_view)
-        avg_rating = ItemRatingService.get_avg_rating(db, item_id)
-    except ResourceNotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    item = ItemService.get_item_by_id(db, item_id, increment_view)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    avg_rating = ItemRatingService.get_avg_rating(db, item_id)
 
     response_dict = ItemResponse.from_orm(item).dict()
     response_dict["avg_rating"] = avg_rating

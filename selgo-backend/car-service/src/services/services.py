@@ -32,20 +32,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ResourceNotFoundException(Exception):
-    pass
-
 class CarCategoryService:
     @staticmethod
     def create_category(db: Session, category_data: CarCategoryCreate) -> CarCategory:
         return CarCategoryRepository.create(db, category_data.dict())
 
     @staticmethod
-    def get_category_by_id(db: Session, category_id: int) -> CarCategory:
-        category = CarCategoryRepository.get_by_id(db, category_id)
-        if not category:
-            raise ResourceNotFoundException("Category not found")
-        return category
+    def get_category_by_id(db: Session, category_id: int) -> Optional[CarCategory]:
+        return CarCategoryRepository.get_by_id(db, category_id)
 
     @staticmethod
     def get_all_categories(db: Session, skip: int = 0, limit: int = 100) -> List[CarCategory]:
@@ -64,16 +58,12 @@ class CarCategoryService:
         return CarCategoryRepository.get_by_parent_id(db, parent_id)
 
     @staticmethod
-    def update_category(db: Session, category_id: int, category_data: CarCategoryCreate) -> CarCategory:
-        category = CarCategoryRepository.update(db, category_id, category_data.dict())
-        if not category:
-            raise ResourceNotFoundException("Category not found")
-        return category
+    def update_category(db: Session, category_id: int, category_data: CarCategoryCreate) -> Optional[CarCategory]:
+        return CarCategoryRepository.update(db, category_id, category_data.dict())
 
     @staticmethod
-    def delete_category(db: Session, category_id: int):
-        if not CarCategoryRepository.delete(db, category_id):
-            raise ResourceNotFoundException("Category not found")
+    def delete_category(db: Session, category_id: int) -> bool:
+        return CarCategoryRepository.delete(db, category_id)
 
 class CarFeatureService:
     @staticmethod
@@ -81,27 +71,20 @@ class CarFeatureService:
         return CarFeatureRepository.create(db, feature_data.dict())
 
     @staticmethod
-    def get_feature_by_id(db: Session, feature_id: int) -> CarFeature:
-        feature = CarFeatureRepository.get_by_id(db, feature_id)
-        if not feature:
-            raise ResourceNotFoundException("Feature not found")
-        return feature
+    def get_feature_by_id(db: Session, feature_id: int) -> Optional[CarFeature]:
+        return CarFeatureRepository.get_by_id(db, feature_id)
 
     @staticmethod
     def get_all_features(db: Session, skip: int = 0, limit: int = 100) -> List[CarFeature]:
         return CarFeatureRepository.get_all(db, skip, limit)
 
     @staticmethod
-    def update_feature(db: Session, feature_id: int, feature_data: CarFeatureCreate) -> CarFeature:
-        feature = CarFeatureRepository.update(db, feature_id, feature_data.dict())
-        if not feature:
-            raise ResourceNotFoundException("Feature not found")
-        return feature
+    def update_feature(db: Session, feature_id: int, feature_data: CarFeatureCreate) -> Optional[CarFeature]:
+        return CarFeatureRepository.update(db, feature_id, feature_data.dict())
 
     @staticmethod
-    def delete_feature(db: Session, feature_id: int):
-        if not CarFeatureRepository.delete(db, feature_id):
-            raise ResourceNotFoundException("Feature not found")
+    def delete_feature(db: Session, feature_id: int) -> bool:
+        return CarFeatureRepository.delete(db, feature_id)
 
 class CarService:
     @staticmethod
@@ -153,12 +136,10 @@ class CarService:
         return query.limit(limit).all()
 
     @staticmethod
-    def get_car_by_id(db: Session, car_id: int, increment_view: bool = False) -> Car:
+    def get_car_by_id(db: Session, car_id: int, increment_view: bool = False) -> Optional[Car]:
         car = CarRepository.get_by_id(db, car_id)
-        if not car:
-            raise ResourceNotFoundException("Car not found")
 
-        if increment_view:
+        if car and increment_view:
             car = CarRepository.increment_view_count(db, car_id)
 
         return car
@@ -176,65 +157,57 @@ class CarService:
         return CarRepository.get_recommended_cars(db, limit)
 
     @staticmethod
-    def update_car(db: Session, car_id: int, car_data: CarUpdate, user_id: int) -> Car:
+    def update_car(db: Session, car_id: int, car_data: CarUpdate, user_id: int) -> Optional[Car]:
         car = CarRepository.get_by_id(db, car_id)
         if not car or car.user_id != user_id:
-            raise ResourceNotFoundException("Car not found or permission denied")
+            return None
 
         features = None
         if car_data.features is not None:
             features = CarFeatureRepository.get_by_ids(db, car_data.features)
 
         car_dict = car_data.dict(exclude_unset=True, exclude={'features'})
-        updated_car = CarRepository.update(db, car_id, car_dict, features)
-        if not updated_car:
-            raise ResourceNotFoundException("Car not found")
-        return updated_car
+        return CarRepository.update(db, car_id, car_dict, features)
 
     @staticmethod
-    def delete_car(db: Session, car_id: int, user_id: int):
+    def delete_car(db: Session, car_id: int, user_id: int) -> bool:
         car = CarRepository.get_by_id(db, car_id)
         if not car or car.user_id != user_id:
-            raise ResourceNotFoundException("Car not found or permission denied")
+            return False
 
-        if not CarRepository.delete(db, car_id):
-            raise ResourceNotFoundException("Car not found")
+        return CarRepository.delete(db, car_id)
 
 class CarImageService:
     @staticmethod
-    def add_image(db: Session, car_id: int, image_data: CarImageCreate, user_id: int) -> CarImage:
+    def add_image(db: Session, car_id: int, image_data: CarImageCreate, user_id: int) -> Optional[CarImage]:
         car = CarRepository.get_by_id(db, car_id)
         if not car or car.user_id != user_id:
-            raise ResourceNotFoundException("Car not found or permission denied")
+            return None
 
-        image = CarImageRepository.create(db, car_id, image_data.dict())
-        if not image:
-            raise HTTPException(status_code=500, detail="Failed to create image")
-        return image
+        return CarImageRepository.create(db, car_id, image_data.dict())
 
     @staticmethod
     def get_images(db: Session, car_id: int) -> List[CarImage]:
         return CarImageRepository.get_by_car_id(db, car_id)
 
     @staticmethod
-    def delete_image(db: Session, image_id: int, user_id: int):
+    def delete_image(db: Session, image_id: int, user_id: int) -> bool:
         image = CarImageRepository.get_by_id(db, image_id)
         if not image:
-            raise ResourceNotFoundException("Image not found")
+            return False
 
         car = CarRepository.get_by_id(db, image.car_id)
         if not car or car.user_id != user_id:
-            raise ResourceNotFoundException("Car not found or permission denied")
+            return False
 
-        if not CarImageRepository.delete(db, image_id):
-            raise ResourceNotFoundException("Image not found")
+        return CarImageRepository.delete(db, image_id)
 
 class CarRatingService:
     @staticmethod
-    def create_rating(db: Session, rating_data: CarRatingCreate, user_id: int) -> CarRating:
+    def create_rating(db: Session, rating_data: CarRatingCreate, user_id: int) -> Optional[CarRating]:
         car = CarRepository.get_by_id(db, rating_data.car_id)
         if not car:
-            raise ResourceNotFoundException("Car not found")
+            return None
 
         existing_ratings = CarRatingRepository.get_by_car_id(db, rating_data.car_id)
         for rating in existing_ratings:
@@ -257,13 +230,12 @@ class CarRatingService:
         return CarRatingRepository.get_avg_rating(db, car_id)
 
     @staticmethod
-    def delete_rating(db: Session, rating_id: int, user_id: int):
+    def delete_rating(db: Session, rating_id: int, user_id: int) -> bool:
         rating = CarRatingRepository.get_by_id(db, rating_id)
         if not rating or rating.user_id != user_id:
-            raise ResourceNotFoundException("Rating not found or permission denied")
+            return False
 
-        if not CarRatingRepository.delete(db, rating_id):
-            raise ResourceNotFoundException("Rating not found")
+        return CarRatingRepository.delete(db, rating_id)
 
 class LoanEstimateService:
     @staticmethod

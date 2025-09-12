@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from ..models.user_models import User, RefreshToken, UserRole, AuthProvider
 from ..models.user_schemas import UserCreate, LoginRequest, UserResponse
 from ..repositories.user_repository import UserRepository
-from ..utils.auth_utils import hash_password, verify_password, create_access_token, create_refresh_token, generate_email_verification_token, generate_otp, generate_password_reset_token
+from ..utils.auth_utils import hash_password, verify_password, create_access_token, create_refresh_token
 from ..config.config import settings
 import logging
 
@@ -38,46 +38,7 @@ class AuthService:
         user_dict['hashed_password'] = hashed_password
         user_dict['auth_provider'] = AuthProvider.EMAIL
         
-        user = self.user_repo.create(db, user_dict)
-        self.send_email_verification(db, user)
-        return user
-
-    def send_email_verification(self, db: Session, user: User):
-        """Send email verification token."""
-        token = generate_email_verification_token()
-        expires_at = datetime.utcnow() + timedelta(hours=settings.EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS)
-        self.user_repo.update_email_verification_token(db, user.id, token, expires_at)
-        # In a real application, you would send an email here
-        # For example: send_email(user.email, "Verify your email", f"Token: {token}")
-        logger.info(f"Generated email verification token for {user.email}: {token}")
-
-    def verify_email(self, db: Session, token: str) -> bool:
-        """Verify user's email."""
-        user = self.user_repo.get_by_email_verification_token(db, token)
-        if not user or user.email_verification_expires < datetime.utcnow():
-            return False
-
-        return self.user_repo.verify_email(db, user.id)
-
-    def send_phone_verification(self, db: Session, user: User):
-        """Send phone verification code."""
-        if not user.phone:
-            return
-
-        otp = generate_otp()
-        expires_at = datetime.utcnow() + timedelta(minutes=settings.PHONE_VERIFICATION_OTP_EXPIRE_MINUTES)
-        self.user_repo.update_phone_verification_code(db, user.id, otp, expires_at)
-        # In a real application, you would send an SMS here
-        # For example: send_sms(user.phone, f"Your verification code is: {otp}")
-        logger.info(f"Generated phone verification OTP for {user.phone}: {otp}")
-
-    def verify_phone(self, db: Session, user_id: int, otp: str) -> bool:
-        """Verify user's phone."""
-        user = self.user_repo.get_by_id(db, user_id)
-        if not user or user.phone_verification_code != otp or user.phone_verification_expires < datetime.utcnow():
-            return False
-
-        return self.user_repo.verify_phone(db, user.id)
+        return self.user_repo.create(db, user_dict)
     
     def authenticate_user(self, db: Session, login_data: LoginRequest) -> Tuple[str, str, User]:
         """Authenticate user and return tokens."""
@@ -153,29 +114,6 @@ class AuthService:
         
         new_hashed_password = hash_password(new_password)
         return self.user_repo.update_password(db, user_id, new_hashed_password)
-
-    def request_password_reset(self, db: Session, email: str):
-        """Request a password reset."""
-        user = self.user_repo.get_by_email(db, email)
-        if not user:
-            # Don't reveal that the user does not exist
-            return
-
-        token = generate_password_reset_token()
-        expires_at = datetime.utcnow() + timedelta(hours=settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS)
-        self.user_repo.update_password_reset_token(db, user.id, token, expires_at)
-        # In a real application, you would send an email here
-        # For example: send_email(user.email, "Password Reset", f"Token: {token}")
-        logger.info(f"Generated password reset token for {user.email}: {token}")
-
-    def reset_password(self, db: Session, token: str, new_password: str) -> bool:
-        """Reset user's password."""
-        user = self.user_repo.get_by_password_reset_token(db, token)
-        if not user or user.password_reset_expires < datetime.utcnow():
-            return False
-
-        new_hashed_password = hash_password(new_password)
-        return self.user_repo.update_password(db, user.id, new_hashed_password)
     
     def _create_user_access_token(self, user: User) -> str:
         """Create access token for user."""
