@@ -145,12 +145,8 @@ class CarService:
         return car
 
     @staticmethod
-    def get_all_cars(db: Session, skip: int = 0, limit: int = 100) -> List[Car]:
-        return CarRepository.get_all(db, skip, limit)
-
-    @staticmethod
-    def filter_cars(db: Session, filters: CarFilterParams) -> Tuple[List[Car], int]:
-        return CarRepository.filter_cars(db, filters)
+    def get_all_cars_with_filters(db: Session, filters: Dict[str, Any]) -> List[Car]:
+        return CarRepository.get_all_with_filters(db, filters)
 
     @staticmethod
     def get_recommended_cars(db: Session, limit: int = 10) -> List[Car]:

@@ -100,38 +100,26 @@ async def create_car(
 ):
     return CarService.create_car(db, car, current_user_id)
 
-@router.get("", response_model=PaginatedResponse)
+@router.get("", response_model=List[CarResponse])
 async def get_all_cars(
-    skip: int = 0,
-    limit: int = 10,
+    make: Optional[str] = Query(None),
+    model: Optional[str] = Query(None),
+    min_year: Optional[int] = Query(None),
+    max_year: Optional[int] = Query(None),
+    min_price: Optional[int] = Query(None),
+    max_price: Optional[int] = Query(None),
     db: Session = Depends(get_db)
 ):
-    cars, total = CarService.get_all_cars(db, skip, limit)
-
-    car_list_responses = [CarListResponse.from_orm(car) for car in cars]
-
-    return PaginatedResponse(
-        items=car_list_responses,
-        total=total,
-        limit=limit,
-        offset=skip
-    )
-
-@router.post("/filter", response_model=PaginatedResponse)
-async def filter_cars(
-    filters: CarFilterParams,
-    db: Session = Depends(get_db)
-):
-    cars, total = CarService.filter_cars(db, filters)
-
-    car_list_responses = [CarListResponse.from_orm(car) for car in cars]
-
-    return PaginatedResponse(
-        items=car_list_responses,
-        total=total,
-        limit=filters.limit,
-        offset=filters.offset
-    )
+    filters = {
+        "make": make,
+        "model": model,
+        "min_year": min_year,
+        "max_year": max_year,
+        "min_price": min_price,
+        "max_price": max_price,
+    }
+    cars = CarService.get_all_cars_with_filters(db, filters)
+    return cars
 
 @router.get("/recommended", response_model=List[CarListResponse])
 async def get_recommended_cars(

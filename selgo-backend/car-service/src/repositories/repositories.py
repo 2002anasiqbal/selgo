@@ -126,83 +126,23 @@ class CarRepository:
         return db.query(Car).filter(Car.id == car_id).first()
 
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100) -> List[Car]:
-        return db.query(Car).offset(skip).limit(limit).all()
+    def get_all_with_filters(db: Session, filters: Dict[str, Any]) -> List[Car]:
+        query = db.query(Car)
 
-    @staticmethod
-    def filter_cars(db: Session, filters: CarFilterParams) -> Tuple[List[Car], int]:
-        query = db.query(Car).filter(Car.status == "active")
+        if filters.get("make"):
+            query = query.filter(Car.make == filters["make"])
+        if filters.get("model"):
+            query = query.filter(Car.model == filters["model"])
+        if filters.get("min_year"):
+            query = query.filter(Car.year >= filters["min_year"])
+        if filters.get("max_year"):
+            query = query.filter(Car.year <= filters["max_year"])
+        if filters.get("min_price"):
+            query = query.filter(Car.price >= filters["min_price"])
+        if filters.get("max_price"):
+            query = query.filter(Car.price <= filters["max_price"])
 
-        if filters.category_id:
-            query = query.filter(Car.category_id == filters.category_id)
-
-        if filters.condition:
-            query = query.filter(Car.condition == filters.condition)
-
-        if filters.price_min is not None:
-            query = query.filter(Car.price >= filters.price_min)
-
-        if filters.price_max is not None:
-            query = query.filter(Car.price <= filters.price_max)
-
-        if filters.year_min is not None:
-            query = query.filter(Car.year >= filters.year_min)
-
-        if filters.year_max is not None:
-            query = query.filter(Car.year <= filters.year_max)
-
-        if filters.mileage_min is not None:
-            query = query.filter(Car.mileage >= filters.mileage_min)
-
-        if filters.mileage_max is not None:
-            query = query.filter(Car.mileage <= filters.mileage_max)
-
-        if filters.seller_type:
-            query = query.filter(Car.seller_type == filters.seller_type)
-
-        if filters.ad_type:
-            query = query.filter(Car.ad_type == filters.ad_type)
-
-        if filters.location and filters.distance:
-            point = ST_SetSRID(ST_MakePoint(filters.location.longitude, filters.location.latitude), 4326)
-            distance_meters = filters.distance * 1000
-            query = query.filter(
-                ST_Distance(
-                    ST_Transform(Car.location, 3857),
-                    ST_Transform(point, 3857)
-                ) <= distance_meters
-            )
-
-        if filters.features:
-            for feature_id in filters.features:
-                query = query.filter(Car.features.any(CarFeature.id == feature_id))
-
-        if filters.search_term:
-            search_term = f"%{filters.search_term}%"
-            query = query.filter(
-                or_(
-                    Car.title.ilike(search_term),
-                    Car.description.ilike(search_term),
-                    Car.make.ilike(search_term),
-                    Car.model.ilike(search_term),
-                    Car.location_name.ilike(search_term)
-                )
-            )
-
-        if filters.sort_by and filters.sort_order:
-            order_column = getattr(Car, filters.sort_by, Car.created_at)
-            if filters.sort_order.lower() == "desc":
-                query = query.order_by(desc(order_column))
-            else:
-                query = query.order_by(asc(order_column))
-
-        total = query.count()
-
-        query = query.offset(filters.offset).limit(filters.limit)
-
-        cars = query.all()
-
-        return cars, total
+        return query.all()
 
     @staticmethod
     def get_recommended_cars(db: Session, limit: int = 10) -> List[Car]:
