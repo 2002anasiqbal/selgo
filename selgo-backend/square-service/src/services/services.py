@@ -114,12 +114,8 @@ class ItemService:
         return item
 
     @staticmethod
-    def get_all_items(db: Session, skip: int = 0, limit: int = 100) -> List[Item]:
-        return ItemRepository.get_all(db, skip, limit)
-
-    @staticmethod
-    def filter_items(db: Session, filters: ItemFilterParams) -> Tuple[List[Item], int]:
-        return ItemRepository.filter_items(db, filters)
+    def get_all_items_with_filters(db: Session, filters: Dict[str, Any]) -> List[Item]:
+        return ItemRepository.get_all_with_filters(db, filters)
 
     @staticmethod
     def get_recommended_items(db: Session, limit: int = 10) -> List[Item]:

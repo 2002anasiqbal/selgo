@@ -3,51 +3,6 @@ const API_URL = process.env.NEXT_PUBLIC_SQUARE_API_URL || 'http://localhost:8006
 import { apiClient } from './authService';
 
 const squareService = {
-  searchItems: async (filters = {}, page = 1, perPage = 20) => {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        per_page: perPage.toString()
-      });
-
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value != null && value !== '' && value !== undefined) {
-          params.append(key, value.toString());
-        }
-      });
-
-      const url = `/square/search?${params}`;
-      const response = await apiClient.get(url);
-
-      if (!response.data) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = response.data;
-
-      return {
-        items: data.items || [],
-        total: data.total || 0,
-        page: page,
-        per_page: perPage,
-        pages: Math.ceil((data.total || 0) / perPage),
-        has_next: data.total > page * perPage,
-        has_prev: page > 1
-      };
-    } catch (error) {
-      console.error('Error searching items:', error);
-      return {
-        items: [],
-        total: 0,
-        page: page,
-        per_page: perPage,
-        pages: 0,
-        has_next: false,
-        has_prev: false
-      };
-    }
-  },
-
   getCategories: async (skip = 0, limit = 100) => {
     try {
       const response = await apiClient.get(`/square/categories?skip=${skip}&limit=${limit}`);
@@ -58,23 +13,21 @@ const squareService = {
     }
   },
 
-  getItems: async (skip = 0, limit = 10) => {
+  getItems: async (filters = {}) => {
     try {
-      const response = await apiClient.get(`/square?skip=${skip}&limit=${limit}&sort_by=created_at&sort_order=desc`);
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          params.append(key, value);
+        }
+      });
+      const queryString = params.toString();
+
+      const response = await apiClient.get(`/square${queryString ? `?${queryString}` : ''}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching items:', error);
-      throw error;
-    }
-  },
-
-  filterItems: async (filters) => {
-    try {
-      const response = await apiClient.post('/square/filter', filters);
-      return response.data;
-    } catch (error) {
-      console.error('Error filtering items:', error.response?.data || error);
-      throw error;
+      return [];
     }
   },
 

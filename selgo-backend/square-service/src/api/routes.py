@@ -62,21 +62,22 @@ async def create_item(
 ):
     return ItemService.create_item(db, item, current_user_id)
 
-@router.post("/filter", response_model=PaginatedResponse)
-async def filter_items(
-    filters: ItemFilterParams,
+@router.get("", response_model=List[ItemResponse])
+async def get_all_items(
+    category: Optional[str] = Query(None),
+    min_price: Optional[int] = Query(None),
+    max_price: Optional[int] = Query(None),
+    location: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
-    items, total = ItemService.filter_items(db, filters)
-
-    item_list_responses = [ItemListResponse.from_orm(item) for item in items]
-
-    return PaginatedResponse(
-        items=item_list_responses,
-        total=total,
-        limit=filters.limit,
-        offset=filters.offset
-    )
+    filters = {
+        "category": category,
+        "min_price": min_price,
+        "max_price": max_price,
+        "location": location,
+    }
+    items = ItemService.get_all_items_with_filters(db, filters)
+    return items
 
 @router.get("/recommended", response_model=List[ItemListResponse])
 async def get_recommended_items(

@@ -83,65 +83,19 @@ class ItemRepository:
         return db.query(Item).filter(Item.id == item_id).first()
 
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100) -> List[Item]:
-        return db.query(Item).offset(skip).limit(limit).all()
+    def get_all_with_filters(db: Session, filters: Dict[str, Any]) -> List[Item]:
+        query = db.query(Item)
 
-    @staticmethod
-    def filter_items(db: Session, filters: ItemFilterParams) -> Tuple[List[Item], int]:
-        query = db.query(Item).filter(Item.status == "active")
+        if filters.get("category"):
+            query = query.join(ItemCategory).filter(ItemCategory.name == filters["category"])
+        if filters.get("min_price"):
+            query = query.filter(Item.price >= filters["min_price"])
+        if filters.get("max_price"):
+            query = query.filter(Item.price <= filters["max_price"])
+        if filters.get("location"):
+            query = query.filter(Item.location_name.ilike(f'%{filters["location"]}%'))
 
-        if filters.category_id:
-            query = query.filter(Item.category_id == filters.category_id)
-
-        if filters.condition:
-            query = query.filter(Item.condition == filters.condition)
-
-        if filters.price_min is not None:
-            query = query.filter(Item.price >= filters.price_min)
-
-        if filters.price_max is not None:
-            query = query.filter(Item.price <= filters.price_max)
-
-        if filters.seller_type:
-            query = query.filter(Item.seller_type == filters.seller_type)
-
-        if filters.ad_type:
-            query = query.filter(Item.ad_type == filters.ad_type)
-
-        if filters.location and filters.distance:
-            point = ST_SetSRID(ST_MakePoint(filters.location.longitude, filters.location.latitude), 4326)
-            distance_meters = filters.distance * 1000
-            query = query.filter(
-                ST_Distance(
-                    ST_Transform(Item.location, 3857),
-                    ST_Transform(point, 3857)
-                ) <= distance_meters
-            )
-
-        if filters.search_term:
-            search_term = f"%{filters.search_term}%"
-            query = query.filter(
-                or_(
-                    Item.title.ilike(search_term),
-                    Item.description.ilike(search_term),
-                    Item.location_name.ilike(search_term)
-                )
-            )
-
-        if filters.sort_by and filters.sort_order:
-            order_column = getattr(Item, filters.sort_by, Item.created_at)
-            if filters.sort_order.lower() == "desc":
-                query = query.order_by(desc(order_column))
-            else:
-                query = query.order_by(asc(order_column))
-
-        total = query.count()
-
-        query = query.offset(filters.offset).limit(filters.limit)
-
-        items = query.all()
-
-        return items, total
+        return query.all()
 
     @staticmethod
     def get_recommended_items(db: Session, limit: int = 10) -> List[Item]:
