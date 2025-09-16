@@ -143,6 +143,7 @@ const squareService = {
     }
   },
 
+
   toggleFavorite: async (itemId) => {
     try {
       const response = await apiClient.post('/square/favorites/toggle', {

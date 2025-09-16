@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import ButtonCard from "../general/ButtonCard";
 import GenericCardCollection from "../GenericCardCollection";
 import SearchBar from "../root/SearchBar";
@@ -55,14 +56,19 @@ export default function SquareMain() {
   return (
     <div className="pt-24 sm:pt-16 bg-white min-h-screen">
       <h1 className="text-5xl text-gray-900 font-bold pb-10">Square</h1>
-      <div className="justify-center items-center gap-4 w-full mb-6 ">
-        <form onSubmit={handleSearchSubmit}>
+      <div className="flex justify-center items-center gap-4 w-full mb-6">
+        <form onSubmit={handleSearchSubmit} className="flex-grow">
           <SearchBar
-            placeholder="Search"
+            placeholder="Search in Square"
             value={searchTerm}
             onChange={handleSearch}
           />
         </form>
+        <Link href="/routes/square/create-ad">
+          <button className="px-6 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            + New Ad
+          </button>
+        </Link>
       </div>
       <GenericCardCollection rows={cardData} rowStyles={rowStyles} imageBasePath="/assets/square/" size="h-32 w-32" />
       <div className="flex justify-center items-center mt-8">
