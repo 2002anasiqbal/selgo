@@ -1,46 +1,60 @@
-// Selgo-frontend/src/app/routes/property/purchase/page.jsx (Updated)
 "use client";
 import React, { useState, useEffect } from "react";
-import GenericCardCollection from "@/components/GenericCardCollection";
-import RecentlyVisitedSlider from "@/components/general/RecentlyVisitedSlider";
 import Page from "@/components/GenerateCard";
-import Purchase from "@/components/property/Purchase";
+import Sidebar from "@/components/general/Sidebar";
 import propertyService from "@/services/propertyService";
 
 export default function PurchasePage() {
-    const [featuredProperties, setFeaturedProperties] = useState([]);
+    const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [totalResults, setTotalResults] = useState(0);
+
+    const searchProperties = async (filters) => {
+        try {
+            setLoading(true);
+            const response = await propertyService.searchProperties(filters);
+            setProperties(response.items || []);
+            setTotalResults(response.total || 0);
+        } catch (error) {
+            console.error('Failed to fetch properties:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchFeaturedProperties = async () => {
-            try {
-                const properties = await propertyService.getRecommendedProperties('purchase', 3);
-                setFeaturedProperties(properties);
-            } catch (error) {
-                console.error('Failed to fetch featured properties:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchFeaturedProperties();
+        searchProperties({ property_type: 'purchase' });
     }, []);
+
+    const handleFilterChange = (newFilters) => {
+        searchProperties({ ...newFilters, property_type: 'purchase' });
+    };
 
     return (
         <div className="bg-white w-full">
-            <Purchase />
-            <RecentlyVisitedSlider />
-            <h1 className="font-bold text-3xl text-gray-800">We think you might like these</h1>
-            {loading ? (
-                <div className="text-center py-10">Loading featured properties...</div>
-            ) : (
-                <Page 
-                    columns={3} 
-                    route="/routes/property/property-details"
-                    cards={featuredProperties}
-                    disableAutoFetch={true}
-                />
-            )}
+            <div className="flex flex-1 relative">
+                <div className="md:w-1/4 z-10 bg-white max-h-[calc(100vh-4rem)] overflow-y-auto hide-scrollbar">
+                    <Sidebar onFilterChange={handleFilterChange} />
+                </div>
+                <div className="flex-1 bg-white max-h-[calc(100vh-4rem)] overflow-y-auto hide-scrollbar">
+                    <div className="container mx-auto px-4 py-8">
+                        <h1 className="font-bold text-3xl text-gray-800">Properties for Sale</h1>
+                        <p className="text-gray-600">
+                            {loading ? "Searching..." : `${totalResults} results found`}
+                        </p>
+                        {loading ? (
+                            <div className="text-center py-10">Loading properties...</div>
+                        ) : (
+                            <Page
+                                columns={3}
+                                route="/routes/property/property-details"
+                                cards={properties}
+                                disableAutoFetch={true}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

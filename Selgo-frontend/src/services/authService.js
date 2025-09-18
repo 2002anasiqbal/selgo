@@ -150,6 +150,29 @@ const authService = {
     }
   },
 
+  // Forgot password
+  forgotPassword: async (email) => {
+    try {
+      const response = await authClient.post('/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Reset password
+  resetPassword: async (token, newPassword) => {
+    try {
+      const response = await authClient.post('/reset-password', {
+        token,
+        new_password: newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
   // Check if user is authenticated
   isAuthenticated: () => {
     const token = localStorage.getItem('accessToken');

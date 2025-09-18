@@ -2,6 +2,7 @@
 import GenericCardCollection from "../GenericCardCollection";
 import SearchBar from "../root/SearchBar";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 
 const cardData = [
@@ -69,11 +70,14 @@ export default function SquareMain() {
   const router = useRouter();
 
   return (
-    <div className="pt-24 sm:pt-16 w-full bg-white">
-      <h1 className="text-5xl text-gray-900 font-bold">The Square</h1>
+    <div className="pt-24 sm:pt-16 w-full bg-white dark:bg-gray-900">
+      <h1 className="text-5xl text-gray-900 dark:text-white font-bold">The Square</h1>
       {/* Search Bar Centered */}
-      <div className="justify-center items-center gap-4 w-full mb-6">
+      <div className="flex justify-center items-center gap-4 w-full mb-6">
         <SearchBar placeholder="Search" onChange={() => console.log("change")} />
+        <Link href="/routes/create-ad/square" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Create Ad
+        </Link>
       </div>
       {/* Cards Section */}
       <GenericCardCollection rows={cardData} rowStyles={rowStyles} imageBasePath="/assets/theSquare/" size="h-32 w-32" />

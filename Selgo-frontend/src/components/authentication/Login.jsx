@@ -132,30 +132,30 @@ const Login = () => {
       </div>
 
       {/* Right Section (Login Form) */}
-      <div className="w-full md:w-1/2 flex items-center justify-center bg-white relative">
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-white dark:bg-gray-800 relative">
         {/* Back Button (Mobile - Inside Login Form) */}
         <button
           onClick={handleBack}
-          className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-gray-100 transition md:hidden"
+          className="absolute top-6 left-6 w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition md:hidden"
         >
-          <FaChevronLeft className="text-black text-lg" />
+          <FaChevronLeft className="text-black dark:text-white text-lg" />
         </button>
 
            {/* Top-right Signup Link */}
-        <div className="absolute top-6 right-6 text-sm text-gray-600">
+        <div className="absolute top-6 right-6 text-sm text-gray-600 dark:text-gray-400">
           Don&apos;t have an account?{" "}
-          <Link href="/routes/auth/signup" className="text-blue-600 hover:underline">
+          <Link href="/routes/auth/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
             Sign up
           </Link>
         </div>
 
          <div className="max-w-sm w-full px-8">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Sign in</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white">Sign in</h2>
 
           {/* Social Logins */}
            <button
             type="button"
-            className="w-full flex items-center text-gray-900 justify-center gap-2 border rounded-full py-2 mb-3 hover:bg-gray-100 transition"
+            className="w-full flex items-center text-gray-900 dark:text-white justify-center gap-2 border dark:border-gray-600 rounded-full py-2 mb-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             onClick={handleGoogleLogin}
           >
             <FaGoogle className="text-red-500" size={20} />
@@ -163,7 +163,7 @@ const Login = () => {
           </button>
           <button
             type="button"
-            className="w-full flex items-center text-gray-900 justify-center gap-2 border rounded-full py-2 hover:bg-gray-100 transition"
+            className="w-full flex items-center text-gray-900 dark:text-white justify-center gap-2 border dark:border-gray-600 rounded-full py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             onClick={handleTwitterLogin}
           >
            <FaTwitter className="text-blue-500" size={20} />
@@ -171,18 +171,18 @@ const Login = () => {
           </button>
 
            <div className="my-5 flex items-center gap-3">
-            <hr className="w-full border-gray-300" />
-            <span className="text-gray-500 text-sm">OR</span>
-            <hr className="w-full border-gray-300" />
+            <hr className="w-full border-gray-300 dark:border-gray-600" />
+            <span className="text-gray-500 dark:text-gray-400 text-sm">OR</span>
+            <hr className="w-full border-gray-300 dark:border-gray-600" />
           </div>
 
           {/* Sign-in Form */}
             <form onSubmit={handleLogin}>
             <div className="mb-4">
-              <label className="block text-gray-700">Email address</label>
+              <label className="block text-gray-700 dark:text-gray-300">Email address</label>
               <input
                 type="email"
-                className="w-full border border-gray-400 rounded-lg p-2 mt-1 text-gray-900 placeholder-gray-400 outline-none"
+                className="w-full border border-gray-400 dark:border-gray-600 rounded-lg p-2 mt-1 text-gray-900 dark:text-white bg-white dark:bg-gray-700 placeholder-gray-400 outline-none"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
@@ -191,17 +191,17 @@ const Login = () => {
             </div>
 
               <div className="mb-4 relative">
-              <label className="block text-gray-700">Password</label>
+              <label className="block text-gray-700 dark:text-gray-300">Password</label>
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full border border-gray-400 rounded-lg p-2 mt-1 text-gray-900 placeholder-gray-400 outline-none"
+                className="w-full border border-gray-400 dark:border-gray-600 rounded-lg p-2 mt-1 text-gray-900 dark:text-white bg-white dark:bg-gray-700 placeholder-gray-400 outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
               />
               <span
-                className="absolute right-3 top-10 text-gray-500 cursor-pointer select-none"
+                className="absolute right-3 top-10 text-gray-500 dark:text-gray-400 cursor-pointer select-none"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? "🙈 Hide" : "👁 Show"}
@@ -209,21 +209,21 @@ const Login = () => {
             </div>
 
             {/* Error Message */}
-             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+             {error && <p className="text-red-500 dark:text-red-400 text-sm mb-3">{error}</p>}
 
             {/* Forget Password */}
-         <div className="flex justify-end items-center">
-              <a
-                href="#"
-                className="text-sm underline text-gray-600 hover:underline"
+            <div className="flex justify-end items-center">
+              <Link
+                href="/routes/auth/forgot-password"
+                className="text-sm underline text-gray-600 dark:text-gray-400 hover:underline"
               >
                 Forget your password?
-              </a>
+              </Link>
             </div>
 
             <button
               type="submit"
-              className="w-1/3 bg-teal-400 text-white py-2 rounded-lg mt-4 hover:bg-teal-500 transition"
+              className="w-1/3 bg-teal-400 text-white py-2 rounded-lg mt-4 hover:bg-teal-500 transition dark:bg-teal-600 dark:hover:bg-teal-700"
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign in"}

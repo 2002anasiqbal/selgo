@@ -7,6 +7,7 @@ import CategoriesSelector from "./catagory";
 import MapControls from "./MapControls";
 import boatService from "@/services/boatService";
 import motorcycleService from "@/services/motorcycleService";
+import propertyService from "@/services/propertyService";
 
 // Default icon fix for Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -50,6 +51,14 @@ export default function Sidebar({ onFilterChange }) {
   const [currentService, setCurrentService] = useState('boat');
   const [brandTypes, setBrandTypes] = useState([]);
   const [selectedBrandTypes, setSelectedBrandTypes] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [models, setModels] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [engineSize, setEngineSize] = useState({ from: "", to: "" });
+  const [mileage, setMileage] = useState({ from: "", to: "" });
+  const [bedrooms, setBedrooms] = useState("");
+  const [area, setArea] = useState({ from: "", to: "" });
 
   // Detect current service based on URL
   useEffect(() => {
@@ -61,6 +70,8 @@ export default function Sidebar({ onFilterChange }) {
         setCurrentService('boat');
       } else if (path.includes('car')) {
         setCurrentService('car');
+      } else if (path.includes('property')) {
+        setCurrentService('property');
       } else {
         setCurrentService('boat'); // default
       }
@@ -73,7 +84,7 @@ export default function Sidebar({ onFilterChange }) {
 
   // Get brand types based on current service
   useEffect(() => {
-    const getBrandTypes = () => {
+    const getBrandTypes = async () => {
       switch (currentService) {
         case 'motorcycle':
           setBrandTypes([
@@ -86,6 +97,8 @@ export default function Sidebar({ onFilterChange }) {
             { id: 'off-road', label: 'Off-road' },
             { id: 'enduro', label: 'Enduro' }
           ]);
+          const fetchedBrands = await motorcycleService.getBrands();
+          setBrands(fetchedBrands);
           break;
         case 'boat':
           setBrandTypes([
@@ -119,6 +132,18 @@ export default function Sidebar({ onFilterChange }) {
     getBrandTypes();
     setSelectedBrandTypes([]); // Reset selected types when service changes
   }, [currentService]);
+
+  useEffect(() => {
+    if (currentService === 'motorcycle' && selectedBrand) {
+      const fetchModels = async () => {
+        const fetchedModels = await motorcycleService.getModels(selectedBrand);
+        setModels(fetchedModels);
+      };
+      fetchModels();
+    } else {
+      setModels([]);
+    }
+  }, [selectedBrand, currentService]);
 
   // Handle brand type selection - ENSURE STATE UPDATE
 const handleBrandTypeChange = (brandTypeId) => {
@@ -240,9 +265,17 @@ useEffect(() => {
   };
 
   // Add service-specific filters
-  if (currentService === 'motorcycle') {
-    filterObject.mileage_min = length.from ? parseFloat(length.from) : null;
-    filterObject.mileage_max = length.to ? parseFloat(length.to) : null;
+  if (currentService === 'property') {
+    if (bedrooms) filterObject.bedrooms = parseInt(bedrooms);
+    filterObject.min_area = area.from ? parseFloat(area.from) : null;
+    filterObject.max_area = area.to ? parseFloat(area.to) : null;
+  } else if (currentService === 'motorcycle') {
+    filterObject.mileage_min = mileage.from ? parseFloat(mileage.from) : null;
+    filterObject.mileage_max = mileage.to ? parseFloat(mileage.to) : null;
+    filterObject.engine_size_min = engineSize.from ? parseInt(engineSize.from) : null;
+    filterObject.engine_size_max = engineSize.to ? parseInt(engineSize.to) : null;
+    if (selectedBrand) filterObject.brand = selectedBrand;
+    if (selectedModel) filterObject.model = selectedModel;
     
     if (selectedBrandTypes.length > 0) {
       filterObject.motorcycle_types = selectedBrandTypes;
@@ -349,7 +382,7 @@ useEffect(() => {
         className={`
           fixed top-0 left-0 h-full w-2/3 
           sm:w-full sm:max-w-xs sm:relative
-          bg-white shadow-lg rounded-md
+          bg-white dark:bg-gray-800 shadow-lg rounded-md
           transform transition-transform duration-300 z-50
           overflow-y-auto
           
@@ -359,7 +392,7 @@ useEffect(() => {
       >
         <button
           onClick={handleCloseSidebar}
-          className="absolute top-4 right-4 text-gray-600 sm:hidden"
+          className="absolute top-4 right-4 text-gray-600 dark:text-gray-400 sm:hidden"
         >
           ×
         </button>
@@ -372,17 +405,17 @@ useEffect(() => {
         {/* FIXED: Brand Type Section - Dynamic based on service with proper checkboxes */}
         {brandTypes.length > 0 && (
           <div className="mt-5 px-4">
-            <h3 className="text-gray-700 text-sm font-bold mb-2">
+            <h3 className="text-gray-700 dark:text-white text-sm font-bold mb-2">
               {currentService === 'motorcycle' ? 'Type MC' : 
                currentService === 'boat' ? 'Boat Type' : 
                currentService === 'car' ? 'Car Type' : 'Type'}
             </h3>
             <div className="space-y-2">
               {brandTypes.map((brandType) => (
-                <label key={brandType.id} className="flex items-center space-x-2 text-gray-700 text-sm cursor-pointer">
+                <label key={brandType.id} className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 text-sm cursor-pointer">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4"
+                    className="w-4 h-4 bg-gray-700 border-gray-600"
                     checked={selectedBrandTypes.includes(brandType.id)}
                     onChange={() => handleBrandTypeChange(brandType.id)}
                   />
@@ -393,9 +426,81 @@ useEffect(() => {
           </div>
         )}
 
+        {currentService === 'motorcycle' && (
+          <>
+            <div className="mt-5 px-4">
+              <h3 className="text-gray-700 dark:text-white text-sm font-bold mb-2">Brand</h3>
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="w-full p-2 border rounded text-gray-800 bg-white dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All Brands</option>
+                {brands.map((brand) => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-5 px-4">
+              <h3 className="text-gray-700 dark:text-white text-sm font-bold mb-2">Model</h3>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                disabled={!selectedBrand}
+                className="w-full p-2 border rounded text-gray-800 bg-white dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All Models</option>
+                {models.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+
+        {currentService === 'property' && (
+          <>
+            <div className="mt-5 px-4">
+              <h3 className="text-gray-700 dark:text-white text-sm font-bold mb-2">Bedrooms</h3>
+              <input
+                type="number"
+                placeholder="Any"
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+                className="w-full p-2 border rounded text-gray-800 bg-white dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="mt-5 px-4">
+              <h3 className="text-gray-700 dark:text-white text-sm font-bold">Area (sqm)</h3>
+              <div className="flex items-center space-x-2 mt-1">
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="From"
+                    value={area.from}
+                    onChange={(e) => setArea(p => ({...p, from: e.target.value}))}
+                    className="w-20 p-1 text-sm border rounded bg-white dark:bg-gray-700 dark:text-white"
+                  />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">From</span>
+                </div>
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="To"
+                    value={area.to}
+                    onChange={(e) => setArea(p => ({...p, to: e.target.value}))}
+                    className="w-20 p-1 text-sm border rounded bg-white dark:bg-gray-700 dark:text-white"
+                  />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">To</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Condition Section */}
         <div className="mt-5 px-4">
-          <h3 className="text-gray-700 text-sm font-bold mb-2">Condition</h3>
+          <h3 className="text-gray-700 dark:text-white text-sm font-bold mb-2">Condition</h3>
           <div className="space-y-2">
             {[
               { value: 'new', label: 'New' },
@@ -406,12 +511,12 @@ useEffect(() => {
               { value: 'poor', label: 'Poor' },
               { value: 'project_boat', label: currentService === 'motorcycle' ? 'Project Bike' : currentService === 'car' ? 'Project Car' : 'Project Boat' }
             ].map(conditionOption => (
-              <label key={conditionOption.value} className="flex items-center space-x-2 text-gray-800 text-sm">
+              <label key={conditionOption.value} className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 text-sm">
                 <input
                   type="checkbox"
                   checked={condition === conditionOption.value}
                   onChange={() => handleConditionChange(conditionOption.value)}
-                  className="w-4 h-4"
+                  className="w-4 h-4 bg-gray-700 border-gray-600"
                 />
                 <span>{conditionOption.label}</span>
               </label>
@@ -421,32 +526,32 @@ useEffect(() => {
 
         {/* Options Section */}
         <div className="mt-5 px-4">
-          <h3 className="text-gray-700 text-sm font-bold mb-2">Options</h3>
+          <h3 className="text-gray-700 dark:text-white text-sm font-bold mb-2">Options</h3>
           <div className="space-y-2">
-            <label className="flex items-center space-x-2 text-gray-800 text-sm">
+            <label className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 text-sm">
               <input
                 type="checkbox"
                 checked={checkboxes.fixFinished}
                 onChange={() => handleCheckboxChange("fixFinished")}
-                className="w-4 h-4"
+                className="w-4 h-4 bg-gray-700 border-gray-600"
               />
               <span>Fix finished</span>
             </label>
-            <label className="flex items-center space-x-2 text-gray-800 text-sm">
+            <label className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 text-sm">
               <input
                 type="checkbox"
                 checked={checkboxes.freeShipping}
                 onChange={() => handleCheckboxChange("freeShipping")}
-                className="w-4 h-4"
+                className="w-4 h-4 bg-gray-700 border-gray-600"
               />
               <span>Free shipping</span>
             </label>
-            <label className="flex items-center space-x-2 text-gray-800 text-sm">
+            <label className="flex items-center space-x-2 text-gray-800 dark:text-gray-300 text-sm">
               <input
                 type="checkbox"
                 checked={checkboxes.newToday}
                 onChange={() => handleCheckboxChange("newToday")}
-                className="w-4 h-4"
+                className="w-4 h-4 bg-gray-700 border-gray-600"
               />
               <span>New today</span>
             </label>
@@ -458,7 +563,7 @@ useEffect(() => {
           <input
             type="text"
             placeholder={`Search ${getServiceDisplayName()}`}
-            className="w-full p-2 border rounded text-gray-800"
+            className="w-full p-2 border rounded text-gray-800 bg-white dark:bg-gray-700 dark:text-white"
             onChange={(e) => setFilters(prev => ({ ...prev, search_term: e.target.value }))}
           />
         </div>
@@ -489,7 +594,7 @@ useEffect(() => {
 
         {/* Distance Slider */}
         <div className="mt-5 px-4">
-          <label className="text-gray-700 text-sm">Distance</label>
+          <label className="text-gray-700 dark:text-white text-sm">Distance</label>
           <input
             type="range"
             min="1"
@@ -498,18 +603,18 @@ useEffect(() => {
             onChange={(e) => setDistance(parseInt(e.target.value))}
             className="w-full"
           />
-          <div className="text-right text-gray-600 text-sm">{distance} km</div>
+          <div className="text-right text-gray-600 dark:text-gray-400 text-sm">{distance} km</div>
         </div>
 
         {/* Features Checkboxes - Only for boats */}
         {currentService === 'boat' && features.length > 0 && (
           <div className="mt-5 px-4">
-            <h3 className="text-gray-700 text-sm font-bold">Features</h3>
+            <h3 className="text-gray-700 dark:text-white text-sm font-bold">Features</h3>
             {features.map((feature) => (
-              <label key={feature.id} className="flex items-center space-x-2 text-gray-700 text-sm">
+              <label key={feature.id} className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 text-sm">
                 <input 
                   type="checkbox" 
-                  className="w-4 h-4"
+                  className="w-4 h-4 bg-gray-700 border-gray-600"
                   checked={selectedFeatures.includes(feature.id)}
                   onChange={() => handleFeatureChange(feature.id)}
                 />
@@ -521,20 +626,20 @@ useEffect(() => {
 
         {/* Private/Dealer */}
         <div className="mt-5 px-4">
-          <h3 className="text-gray-700 text-sm font-bold">Private/Dealer</h3>
-          <label className="flex items-center space-x-2 text-gray-700 text-sm">
+          <h3 className="text-gray-700 dark:text-white text-sm font-bold">Private/Dealer</h3>
+          <label className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 text-sm">
             <input 
               type="checkbox" 
-              className="w-4 h-4"
+              className="w-4 h-4 bg-gray-700 border-gray-600"
               checked={checkboxes.retailer}
               onChange={() => handleCheckboxChange("retailer")}
             />
             <span>Retailer</span>
           </label>
-          <label className="flex items-center space-x-2 text-gray-700 text-sm">
+          <label className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 text-sm">
             <input 
               type="checkbox" 
-              className="w-4 h-4"
+              className="w-4 h-4 bg-gray-700 border-gray-600"
               checked={checkboxes.private}
               onChange={() => handleCheckboxChange("private")}
             />
@@ -544,20 +649,20 @@ useEffect(() => {
 
         {/* Ad Type */}
         <div className="mt-5 px-4">
-          <h3 className="text-gray-700 text-sm font-bold">Ad Type</h3>
-          <label className="flex items-center space-x-2 text-gray-700 text-sm">
+          <h3 className="text-gray-700 dark:text-white text-sm font-bold">Ad Type</h3>
+          <label className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 text-sm">
             <input 
               type="checkbox" 
-              className="w-4 h-4"
+              className="w-4 h-4 bg-gray-700 border-gray-600"
               checked={checkboxes.forSale}
               onChange={() => handleCheckboxChange("forSale")}
             />
             <span>For Sale</span>
           </label>
-          <label className="flex items-center space-x-2 text-gray-700 text-sm">
+          <label className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 text-sm">
             <input 
               type="checkbox" 
-              className="w-4 h-4"
+              className="w-4 h-4 bg-gray-700 border-gray-600"
               checked={checkboxes.forRent}
               onChange={() => handleCheckboxChange("forRent")}
             />
@@ -567,7 +672,7 @@ useEffect(() => {
         
         {/* Price Section */}
         <div className="mt-5 px-4">
-          <h3 className="text-gray-700 text-sm font-bold">Price</h3>
+          <h3 className="text-gray-700 dark:text-white text-sm font-bold">Price</h3>
           <div className="flex items-center space-x-2 mt-1">
             <div className="flex flex-col">
               <input
@@ -575,9 +680,9 @@ useEffect(() => {
                 placeholder="From"
                 value={price.from}
                 onChange={(e) => handlePriceChange("from", e.target.value)}
-                className="w-20 p-1 text-sm border rounded"
+                className="w-20 p-1 text-sm border rounded bg-white dark:bg-gray-700 dark:text-white"
               />
-              <span className="text-xs text-gray-500">From</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">From</span>
             </div>
             <div className="flex flex-col">
               <input
@@ -585,16 +690,16 @@ useEffect(() => {
                 placeholder="To"
                 value={price.to}
                 onChange={(e) => handlePriceChange("to", e.target.value)}
-                className="w-20 p-1 text-sm border rounded"
+                className="w-20 p-1 text-sm border rounded bg-white dark:bg-gray-700 dark:text-white"
               />
-              <span className="text-xs text-gray-500">To</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">To</span>
             </div>
           </div>
         </div>
         
         {/* Year Range */}
         <div className="mt-5 px-4">
-          <h3 className="text-gray-700 text-sm font-bold">Year</h3>
+          <h3 className="text-gray-700 dark:text-white text-sm font-bold">Year</h3>
           <div className="flex items-center space-x-2 mt-1">
             <div className="flex flex-col">
               <input
@@ -602,9 +707,9 @@ useEffect(() => {
                 placeholder="From"
                 value={year.from}
                 onChange={(e) => handleYearChange("from", e.target.value)}
-                className="w-20 p-1 text-sm border rounded"
+                className="w-20 p-1 text-sm border rounded bg-white dark:bg-gray-700 dark:text-white"
               />
-              <span className="text-xs text-gray-500">From</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">From</span>
             </div>
             <div className="flex flex-col">
               <input
@@ -612,9 +717,9 @@ useEffect(() => {
                 placeholder="To"
                 value={year.to}
                 onChange={(e) => handleYearChange("to", e.target.value)}
-                className="w-20 p-1 text-sm border rounded"
+                className="w-20 p-1 text-sm border rounded bg-white dark:bg-gray-700 dark:text-white"
               />
-              <span className="text-xs text-gray-500">To</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">To</span>
             </div>
           </div>
         </div>
@@ -630,8 +735,8 @@ useEffect(() => {
               <input
                 type="text"
                 placeholder="From"
-                value={length.from}
-                onChange={(e) => handleLengthChange("from", e.target.value)}
+                value={currentService === 'motorcycle' ? mileage.from : length.from}
+                onChange={(e) => currentService === 'motorcycle' ? setMileage(p => ({...p, from: e.target.value})) : handleLengthChange("from", e.target.value)}
                 className="w-20 p-1 text-sm border rounded"
               />
               <span className="text-xs text-gray-500">From</span>
@@ -640,14 +745,42 @@ useEffect(() => {
               <input
                 type="text"
                 placeholder="To"
-                value={length.to}
-                onChange={(e) => handleLengthChange("to", e.target.value)}
+                value={currentService === 'motorcycle' ? mileage.to : length.to}
+                onChange={(e) => currentService === 'motorcycle' ? setMileage(p => ({...p, to: e.target.value})) : handleLengthChange("to", e.target.value)}
                 className="w-20 p-1 text-sm border rounded"
               />
               <span className="text-xs text-gray-500">To</span>
             </div>
           </div>
         </div>
+
+        {currentService === 'motorcycle' && (
+          <div className="mt-5 px-4">
+            <h3 className="text-gray-700 text-sm font-bold">Engine Size (cc)</h3>
+            <div className="flex items-center space-x-2 mt-1">
+              <div className="flex flex-col">
+                <input
+                  type="text"
+                  placeholder="From"
+                  value={engineSize.from}
+                  onChange={(e) => setEngineSize(p => ({...p, from: e.target.value}))}
+                  className="w-20 p-1 text-sm border rounded"
+                />
+                <span className="text-xs text-gray-500">From</span>
+              </div>
+              <div className="flex flex-col">
+                <input
+                  type="text"
+                  placeholder="To"
+                  value={engineSize.to}
+                  onChange={(e) => setEngineSize(p => ({...p, to: e.target.value}))}
+                  className="w-20 p-1 text-sm border rounded"
+                />
+                <span className="text-xs text-gray-500">To</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Apply Filters Button */}
         <div className="mt-5 px-4 pb-10">

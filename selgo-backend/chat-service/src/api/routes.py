@@ -11,6 +11,7 @@ from ..models.chat_schemas import (
 )
 from ..database.database import get_db
 from ..utils.auth import get_current_user_id
+import json
 
 # Create router
 router = APIRouter(
@@ -22,31 +23,49 @@ router = APIRouter(
 # WebSocket connection manager
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, WebSocket] = {}
+        self.active_connections: dict[int, list[WebSocket]] = {}
 
-    async def connect(self, user_id: int, websocket: WebSocket):
+    async def connect(self, conversation_id: int, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections[user_id] = websocket
+        if conversation_id not in self.active_connections:
+            self.active_connections[conversation_id] = []
+        self.active_connections[conversation_id].append(websocket)
 
-    def disconnect(self, user_id: int):
-        if user_id in self.active_connections:
-            del self.active_connections[user_id]
+    def disconnect(self, conversation_id: int, websocket: WebSocket):
+        if conversation_id in self.active_connections:
+            self.active_connections[conversation_id].remove(websocket)
 
-    async def send_personal_message(self, message: str, user_id: int):
-        if user_id in self.active_connections:
-            await self.active_connections[user_id].send_text(message)
+    async def broadcast(self, conversation_id: int, message: str):
+        if conversation_id in self.active_connections:
+            for connection in self.active_connections[conversation_id]:
+                await connection.send_text(message)
 
 manager = ConnectionManager()
 
-@router.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: int):
-    await manager.connect(user_id, websocket)
+@router.websocket("/ws/{conversation_id}/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, conversation_id: int, user_id: int, db: Session = Depends(get_db)):
+    await manager.connect(conversation_id, websocket)
     try:
         while True:
             data = await websocket.receive_text()
-            # Handle incoming messages if needed
+            message_data = json.loads(data)
+
+            # Create message in database
+            message_create = MessageCreate(
+                conversation_id=conversation_id,
+                sender_id=user_id,
+                content=message_data['content']
+            )
+            new_message = ChatService.create_message(db, message_create, user_id)
+
+            if new_message:
+                # Broadcast message to all participants in the conversation
+                await manager.broadcast(
+                    conversation_id,
+                    json.dumps(MessageResponse.model_validate(new_message).model_dump())
+                )
     except WebSocketDisconnect:
-        manager.disconnect(user_id)
+        manager.disconnect(conversation_id, websocket)
 
 
 # ==================== Conversation Routes ====================
@@ -79,24 +98,6 @@ async def get_conversation(
 
 # ==================== Message Routes ====================
 
-@router.post("/conversations/{conversation_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def create_message(
-    conversation_id: int,
-    message: MessageCreate,
-    db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id)
-):
-    new_message = ChatService.create_message(db, conversation_id, message, current_user_id)
-    if not new_message:
-        raise HTTPException(status_code=404, detail="Conversation not found or user not a participant")
-
-    # Notify the other participant via WebSocket
-    conversation = ChatService.get_conversation(db, conversation_id, current_user_id)
-    for participant in conversation.participants:
-        if participant.user_id != current_user_id:
-            await manager.send_personal_message(f"New message from {current_user_id}", participant.user_id)
-
-    return new_message
 
 @router.get("/conversations/{conversation_id}/messages", response_model=List[MessageResponse])
 async def get_messages(

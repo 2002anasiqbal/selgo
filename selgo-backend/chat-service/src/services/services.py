@@ -19,8 +19,8 @@ class ChatService:
         return ChatRepository.get_conversation(db, conversation_id, user_id)
 
     @staticmethod
-    def create_message(db: Session, conversation_id: int, message_data: MessageCreate, user_id: int) -> Optional[Message]:
-        return ChatRepository.create_message(db, conversation_id, message_data, user_id)
+    def create_message(db: Session, message_data: MessageCreate, user_id: int) -> Optional[Message]:
+        return ChatRepository.create_message(db, message_data, user_id)
 
     @staticmethod
     def get_messages(db: Session, conversation_id: int, user_id: int) -> Optional[List[Message]]:

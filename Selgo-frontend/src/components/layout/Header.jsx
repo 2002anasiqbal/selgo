@@ -91,9 +91,9 @@ const Header = () => {
   const iconHoverClass = "transition-all duration-200 hover:drop-shadow-[0_0_8px_rgba(20,184,166,0.65)] transform hover:scale-110";
 
   return (
-    <header className="bg-white shadow-md fixed top-0 left-0 w-full z-50 flex flex-col md:flex-row md:h-16">
+    <header className="bg-white dark:bg-gray-800 shadow-md fixed top-0 left-0 w-full z-50 flex flex-col md:flex-row md:h-16">
       {/* Top row for small screens - Logo and Burger */}
-      <div className="flex items-center justify-between w-full h-16 md:hidden px-5">
+      <div className="flex items-center justify-between w-full h-16 md:hidden px-5 dark:bg-gray-800">
         {/* Logo on left for small screens */}
         <div className="flex items-center">
           <Link href={"/"}>
@@ -107,15 +107,15 @@ const Header = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className={`relative ${iconHoverClass}`}
           >
-            <CiMenuFries size={24} className="text-teal-700" />
+            <CiMenuFries size={24} className="text-teal-700 dark:text-teal-400" />
           </button>
 
           {isMenuOpen && (
             <div
               id="menu"
-              className="absolute top-full right-0 w-64 bg-white shadow-lg z-[9999] p-4 rounded-lg md:hidden"
+              className="absolute top-full right-0 w-64 bg-white dark:bg-gray-700 shadow-lg z-[9999] p-4 rounded-lg md:hidden"
             >
-              <ul className="flex flex-col space-y-4 text-gray-900">
+              <ul className="flex flex-col space-y-4 text-gray-900 dark:text-gray-200">
                 {menuItems.map((item, index) => (
                   <Link href={item.href} key={index}>
                     <li className="flex items-center gap-3 text-lg font-medium hover:text-teal-500 cursor-pointer">
@@ -138,11 +138,11 @@ const Header = () => {
       </div>
 
       {/* Bottom row for small screens - Post Ad, Language, Messages, Notifications, User */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-inner flex items-center justify-between px-5 w-full h-12 md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-inner flex items-center justify-between px-5 w-full h-12 md:hidden">
                {/* Post Ad */}
           <Link href="/routes/create-ad">
             <div className={iconHoverClass}>
-              <CiCirclePlus size={24} className="text-teal-700 cursor-pointer" />
+              <CiCirclePlus size={24} className="text-teal-700 dark:text-teal-400 cursor-pointer" />
             </div>
           </Link>
 
@@ -154,14 +154,14 @@ const Header = () => {
             onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
             className={`p-1 cursor-pointer rounded-full hover:shadow-teal-100 transition-colors duration-200 group ${iconHoverClass}`}
           >
-            <HiLanguage size={24} className="text-teal-700 group-hover:text-teal-700" />
+            <HiLanguage size={24} className="text-teal-700 dark:text-teal-400 group-hover:text-teal-700" />
           </button>
           {isLangMenuOpen && (
             <div
               id="lang-menu"
-              className="absolute -top-20 border-1 border-teal-400 left-0 w-32 bg-white shadow-lg z-40 p-2 rounded-lg"
+              className="absolute -top-20 border-1 border-teal-400 left-0 w-32 bg-white dark:bg-gray-700 shadow-lg z-40 p-2 rounded-lg"
             >
-              <ul className="flex flex-col space-y-2 text-gray-900">
+              <ul className="flex flex-col space-y-2 text-gray-900 dark:text-gray-200">
                 <li
                   className="cursor-pointer hover:text-teal-500"
                   onClick={() => handleLanguageChange("en")}
@@ -182,7 +182,7 @@ const Header = () => {
         {/* Messages */}
         <Link href="/routes/messages">
           <div className={`relative cursor-pointer ${iconHoverClass}`}>
-            <CiChat1 size={24} className="text-teal-700" />
+            <CiChat1 size={24} className="text-teal-700 dark:text-teal-400" />
             {messages > 0 && (
               <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
                 {messages}
@@ -194,7 +194,7 @@ const Header = () => {
         {/* Notifications */}
         <Link href="/routes/notifications">
           <div className={`relative cursor-pointer ${iconHoverClass}`}>
-            <CiBellOn size={24} className="text-teal-700" />
+            <CiBellOn size={24} className="text-teal-700 dark:text-teal-400" />
             {notifications > 0 && (
               <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
                 {notifications}
@@ -217,12 +217,12 @@ const Header = () => {
                     className="rounded-full cursor-pointer"
                   />
                 ) : (
-                  <FaUserCircle size={28} className="text-teal-700" />
+                  <FaUserCircle size={28} className="text-teal-700 dark:text-teal-400" />
                 )}
               </div>
               <button
                 onClick={handleLogout}
-                className="text-sm text-teal-700 hover:underline"
+                className="text-sm text-teal-700 dark:text-teal-400 hover:underline"
               >
                 Logout
               </button>
@@ -230,10 +230,10 @@ const Header = () => {
           ) : (
             <>
               <div onClick={handleProfileClick} className={`flex items-center ${iconHoverClass}`}>
-                <FaUserCircle size={24} className="text-teal-700 cursor-pointer" />
+                <FaUserCircle size={24} className="text-teal-700 dark:text-teal-400 cursor-pointer" />
               </div>
               <Link href="/routes/auth/signin">
-                <span className="text-sm text-teal-700 hover:underline">Log in</span>
+                <span className="text-sm text-teal-700 dark:text-teal-400 hover:underline">Log in</span>
               </Link>
             </>
           )}
@@ -248,7 +248,7 @@ const Header = () => {
           <div className="flex items-center space-x-6 shrink-0">
             {/* Burger Icon */}
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`relative ${iconHoverClass}`}>
-              <CiMenuFries size={24} className="text-teal-700 shrink-0" />
+              <CiMenuFries size={24} className="text-teal-700 dark:text-teal-400 shrink-0" />
             </button>
 
             {/* Logo */}
@@ -271,14 +271,14 @@ const Header = () => {
             {/* Post Ad */}
             <Link href="/routes/ads">
               <div className={iconHoverClass}>
-                <CiCirclePlus size={24} className="text-teal-700 cursor-pointer shrink-0" />
+                <CiCirclePlus size={24} className="text-teal-700 dark:text-teal-400 cursor-pointer shrink-0" />
               </div>
             </Link>
 
             {/* Messages */}
             <Link href="/routes/messages">
               <div className={`relative cursor-pointer ${iconHoverClass}`}>
-                <CiChat1 size={24} className="text-teal-700 shrink-0" />
+                <CiChat1 size={24} className="text-teal-700 dark:text-teal-400 shrink-0" />
                 {messages > 0 && (
                   <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
                     {messages}
@@ -290,7 +290,7 @@ const Header = () => {
             {/* Notifications */}
             <Link href="/routes/notifications">
               <div className={`relative cursor-pointer ${iconHoverClass}`}>
-                <CiBellOn size={24} className="text-teal-700 shrink-0" />
+                <CiBellOn size={24} className="text-teal-700 dark:text-teal-400 shrink-0" />
                 {notifications > 0 && (
                   <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
                     {notifications}
@@ -306,14 +306,14 @@ const Header = () => {
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
                 className={`p-1 cursor-pointer rounded-full hover:shadow-teal-100 transition-colors duration-200 group ${iconHoverClass}`}
               >
-                <HiLanguage size={24} className="text-teal-700 group-hover:text-teal-700 shrink-0" />
+                <HiLanguage size={24} className="text-teal-700 dark:text-teal-400 group-hover:text-teal-700 shrink-0" />
               </button>
               {isLangMenuOpen && (
                 <div
                   id="lang-menu-desktop"
-                  className="absolute top-full left-0 w-32 border border-teal-500 bg-white shadow-lg z-40 p-2 rounded-lg"
+                  className="absolute top-full left-0 w-32 border border-teal-500 bg-white dark:bg-gray-700 shadow-lg z-40 p-2 rounded-lg"
                 >
-                  <ul className="flex flex-col space-y-2 text-gray-900">
+                  <ul className="flex flex-col space-y-2 text-gray-900 dark:text-gray-200">
                     <li className="cursor-pointer hover:text-teal-500" onClick={() => handleLanguageChange("en")}>
                       English (En)
                     </li>
@@ -339,20 +339,20 @@ const Header = () => {
                         className="rounded-full cursor-pointer shrink-0"
                       />
                     ) : (
-                      <FaUserCircle size={28} className="text-teal-700 shrink-0" />
+                      <FaUserCircle size={28} className="text-teal-700 dark:text-teal-400 shrink-0" />
                     )}
                   </div>
-                  <button onClick={handleLogout} className="text-sm text-teal-700 hover:underline">
+                  <button onClick={handleLogout} className="text-sm text-teal-700 dark:text-teal-400 hover:underline">
                     Logout
                   </button>
                 </>
               ) : (
                 <>
                   <div onClick={handleProfileClick} className={`flex items-center ${iconHoverClass}`}>
-                    <FaUserCircle size={24} className="text-teal-700 cursor-pointer shrink-0" />
+                    <FaUserCircle size={24} className="text-teal-700 dark:text-teal-400 cursor-pointer shrink-0" />
                   </div>
                   <Link href="/routes/auth/signin">
-                    <span className="text-sm text-teal-700 hover:underline">Log in</span>
+                    <span className="text-sm text-teal-700 dark:text-teal-400 hover:underline">Log in</span>
                   </Link>
                 </>
               )}
@@ -365,9 +365,9 @@ const Header = () => {
       {isMenuOpen && (
         <div
           id="menu"
-          className="hidden md:block absolute top-full left-60 border-1 rounded-lg border-teal-300 p-4 w-1/2 md:w-1/4 lg:w-1/5 bg-white shadow-lg z-40 rounded-b-lg"
+          className="hidden md:block absolute top-full left-60 border-1 rounded-lg border-teal-300 p-4 w-1/2 md:w-1/4 lg:w-1/5 bg-white dark:bg-gray-700 shadow-lg z-40 rounded-b-lg"
         >
-          <ul className="flex flex-col space-y-4 text-gray-900">
+          <ul className="flex flex-col space-y-4 text-gray-900 dark:text-gray-200">
             {menuItems.map((item, index) => (
               <Link href={item.href} key={index}>
                 <li className="flex items-center gap-3 text-lg font-medium hover:text-teal-500 cursor-pointer">

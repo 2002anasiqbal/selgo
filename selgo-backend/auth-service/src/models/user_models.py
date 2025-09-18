@@ -28,6 +28,8 @@ class User(Base):
     provider_id = Column(String(255), nullable=True)  # OAuth provider user ID
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
+    password_reset_token = Column(String, nullable=True)
+    password_reset_expires = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     last_login = Column(DateTime, nullable=True)

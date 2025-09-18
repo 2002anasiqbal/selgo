@@ -101,7 +101,33 @@ class MotorcycleService {
       console.error('❌ Error fetching categories:', error);
       throw error;
     }
-  }  
+  }
+
+  async getBrands() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/motorcycles/brands`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+      return [];
+    }
+  }
+
+  async getModels(brand) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/motorcycles/models?brand=${brand}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching models for brand ${brand}:`, error);
+      return [];
+    }
+  }
 
   // Create new motorcycle ad
   async createMotorcycle(motorcycleData) {
@@ -204,6 +230,10 @@ class MotorcycleService {
         has_prev: false
       };
     }
+  }
+
+  async filterMotorcycles(filters = {}, page = 1, perPage = 20) {
+    return this.searchMotorcycles(filters, page, perPage);
   }
 
   // Get motorcycle details

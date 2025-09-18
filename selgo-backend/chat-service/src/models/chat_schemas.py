@@ -18,10 +18,11 @@ class ParticipantResponse(ParticipantBase):
 
 # ==================== Conversation Schemas ====================
 class ConversationBase(BaseModel):
-    pass
+    item_id: Optional[str] = None
 
-class ConversationCreate(ConversationBase):
-    participant_id: int
+class ConversationCreate(BaseModel):
+    participant_ids: List[int]
+    item_id: Optional[str] = None
 
 class ConversationResponse(ConversationBase):
     id: int
@@ -37,7 +38,8 @@ class MessageBase(BaseModel):
     content: str
 
 class MessageCreate(MessageBase):
-    pass
+    conversation_id: int
+    sender_id: int
 
 class MessageResponse(MessageBase):
     id: int

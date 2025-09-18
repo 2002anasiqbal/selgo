@@ -24,6 +24,10 @@ class UserRepository:
         """Get user by username."""
         return db.query(User).filter(User.username == username).first()
     
+    def get_by_password_reset_token(self, db: Session, token: str) -> Optional[User]:
+        """Get user by password reset token."""
+        return db.query(User).filter(User.password_reset_token == token).first()
+
     def get_by_provider_id(self, db: Session, provider_id: str, provider: str) -> Optional[User]:
         """Get user by OAuth provider ID."""
         return db.query(User).filter(

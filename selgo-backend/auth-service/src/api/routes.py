@@ -7,6 +7,7 @@ from ..services.auth_service import AuthService
 from ..models.user_schemas import (
     UserCreate, UserResponse, LoginRequest, LoginResponse, 
     RefreshTokenRequest, TokenResponse, ChangePasswordRequest,
+    ForgotPasswordRequest, ResetPasswordRequest,
     TokenValidationResponse
 )
 from ..utils.auth_utils import get_user_from_token
@@ -85,6 +86,30 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             detail="User not found"
         )
     return UserResponse.model_validate(user)  # Updated for Pydantic v2
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Request a password reset for a user.
+    """
+    success = auth_service.request_password_reset(db, request.email)
+    if not success:
+        # Still return 200 to not reveal if user exists
+        print(f"Password reset request for non-existent user: {request.email}")
+    return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Reset a user's password using a reset token.
+    """
+    success = auth_service.reset_password(db, request.token, request.new_password)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token, or invalid new password."
+        )
+    return {"message": "Your password has been successfully reset."}
 
 @router.post("/change-password")
 def change_password(

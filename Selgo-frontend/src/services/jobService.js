@@ -51,6 +51,15 @@ const jobService = {
     }
   },
 
+  createJob: async (jobData) => {
+    try {
+      const response = await jobClient.post('/jobs', jobData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
   getFeaturedJobs: async (limit = 10) => {
     try {
       const response = await jobClient.get('/jobs/featured', { params: { limit } });

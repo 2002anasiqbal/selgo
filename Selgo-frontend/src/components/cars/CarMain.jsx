@@ -53,8 +53,8 @@ export default function CarMain() {
   };
 
   return (
-    <div className="pt-24 sm:pt-16 bg-white min-h-screen">
-      <h1 className="text-5xl text-gray-900 font-bold pb-10">Car</h1>
+    <div className="pt-24 sm:pt-16 bg-white dark:bg-gray-900 min-h-screen">
+      <h1 className="text-5xl text-gray-900 dark:text-white font-bold pb-10">Car</h1>
       <div className="justify-center items-center gap-4 w-full mb-6 ">
         <form onSubmit={handleSearchSubmit}>
           <SearchBar

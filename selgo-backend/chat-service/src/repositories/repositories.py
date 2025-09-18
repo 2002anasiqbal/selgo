@@ -3,19 +3,33 @@ from typing import List, Optional
 
 from ..models.chat_models import Conversation, Message, Participant
 from ..models.chat_schemas import ConversationCreate, MessageCreate
+from sqlalchemy import and_
 
 class ChatRepository:
     @staticmethod
     def create_conversation(db: Session, conversation_data: ConversationCreate, user_id: int) -> Conversation:
-        db_conversation = Conversation()
+        # Check if a conversation with these participants and item already exists
+        participant_ids = sorted(conversation_data.participant_ids + [user_id])
+
+        existing_conversation = db.query(Conversation).filter(
+            Conversation.item_id == conversation_data.item_id
+        ).filter(
+            and_(*[Conversation.participants.any(user_id=pid) for pid in participant_ids])
+        ).first()
+
+        if existing_conversation:
+            return existing_conversation
+
+        db_conversation = Conversation(item_id=conversation_data.item_id)
         db.add(db_conversation)
         db.commit()
         db.refresh(db_conversation)
 
         # Add participants
-        participant1 = Participant(user_id=user_id, conversation_id=db_conversation.id)
-        participant2 = Participant(user_id=conversation_data.participant_id, conversation_id=db_conversation.id)
-        db.add_all([participant1, participant2])
+        for participant_id in participant_ids:
+            participant = Participant(user_id=participant_id, conversation_id=db_conversation.id)
+            db.add(participant)
+
         db.commit()
         db.refresh(db_conversation)
 
@@ -33,14 +47,14 @@ class ChatRepository:
         ).first()
 
     @staticmethod
-    def create_message(db: Session, conversation_id: int, message_data: MessageCreate, user_id: int) -> Optional[Message]:
-        conversation = ChatRepository.get_conversation(db, conversation_id, user_id)
+    def create_message(db: Session, message_data: MessageCreate, user_id: int) -> Optional[Message]:
+        conversation = ChatRepository.get_conversation(db, message_data.conversation_id, user_id)
         if not conversation:
             return None
 
         db_message = Message(
-            conversation_id=conversation_id,
-            sender_id=user_id,
+            conversation_id=message_data.conversation_id,
+            sender_id=message_data.sender_id,
             content=message_data.content
         )
         db.add(db_message)

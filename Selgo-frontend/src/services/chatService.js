@@ -3,9 +3,12 @@ const API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:8002/a
 import { apiClient } from './authService';
 
 const chatService = {
-  createConversation: async (participantId) => {
+  createConversation: async (participantIds, itemId = null) => {
     try {
-      const response = await apiClient.post('/chats/conversations', { participant_id: participantId });
+      const response = await apiClient.post('/chats/conversations', {
+        participant_ids: participantIds,
+        item_id: itemId,
+      });
       return response.data;
     } catch (error) {
       console.error('Error creating conversation:', error);
@@ -33,14 +36,28 @@ const chatService = {
     }
   },
 
-  sendMessage: async (conversationId, content) => {
-    try {
-      const response = await apiClient.post(`/chats/conversations/${conversationId}/messages`, { content });
-      return response.data;
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
+  connectWebSocket: (conversationId, userId, onMessageCallback) => {
+    const wsUrl = (process.env.NEXT_PUBLIC_CHAT_API_URL || 'ws://localhost:8004/api/v1').replace('http', 'ws');
+    const ws = new WebSocket(`${wsUrl}/chats/ws/${conversationId}/${userId}`);
+
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      onMessageCallback(message);
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return ws;
   },
 };
 

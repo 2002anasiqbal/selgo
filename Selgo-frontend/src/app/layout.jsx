@@ -20,6 +20,38 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function setTheme(theme) {
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                  localStorage.setItem('theme', theme);
+                }
+
+                const query = window.matchMedia('(prefers-color-scheme: dark)');
+                let theme = localStorage.getItem('theme');
+                if (!theme) {
+                  theme = query.matches ? 'dark' : 'light';
+                }
+
+                setTheme(theme);
+
+                query.addEventListener('change', (e) => {
+                  if (!localStorage.getItem('theme')) {
+                    setTheme(e.matches ? 'dark' : 'light');
+                  }
+                });
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased pb-12 sm:pb-0`}
       >

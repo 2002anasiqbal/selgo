@@ -1,9 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import chatService from '../../services/chatService';
+import useAuthStore from '../../store/store';
 
 const ChatWindow = ({ conversationId }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const { user } = useAuthStore();
+  const ws = useRef(null);
+
+  useEffect(() => {
+    if (user && conversationId) {
+      ws.current = chatService.connectWebSocket(conversationId, user.id, (message) => {
+        setMessages((prevMessages) => [...prevMessages, message]);
+      });
+
+      return () => {
+        if (ws.current) {
+          ws.current.close();
+        }
+      };
+    }
+  }, [user, conversationId]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -17,22 +34,17 @@ const ChatWindow = ({ conversationId }) => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (newMessage.trim() === '') return;
+    if (newMessage.trim() === '' || !ws.current) return;
 
-    try {
-      const sentMessage = await chatService.sendMessage(conversationId, newMessage);
-      setMessages([...messages, sentMessage]);
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
+    ws.current.send(JSON.stringify({ content: newMessage }));
+    setNewMessage('');
   };
 
   return (
     <div className="chat-window">
       <div className="messages-list">
         {messages.map((message) => (
-          <div key={message.id} className="message">
+          <div key={message.id} className={`message ${message.sender_id === user?.id ? 'sent' : 'received'}`}>
             <p>{message.content}</p>
             <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
           </div>

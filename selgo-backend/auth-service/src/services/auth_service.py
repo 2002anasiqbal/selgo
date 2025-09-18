@@ -8,6 +8,7 @@ from ..repositories.user_repository import UserRepository
 from ..utils.auth_utils import hash_password, verify_password, create_access_token, create_refresh_token
 from ..config.config import settings
 import logging
+import secrets
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,56 @@ class AuthService:
         
         new_hashed_password = hash_password(new_password)
         return self.user_repo.update_password(db, user_id, new_hashed_password)
+
+    def request_password_reset(self, db: Session, email: str) -> bool:
+        """Generate a password reset token and send it to the user."""
+        user = self.user_repo.get_by_email(db, email)
+        if not user:
+            logger.warning(f"Password reset request for non-existent user: {email}")
+            return False
+
+        # Generate a secure token
+        token = secrets.token_urlsafe(32)
+
+        # Set token and expiration
+        user.password_reset_token = token
+        user.password_reset_expires = datetime.utcnow() + timedelta(hours=1) # 1 hour expiry
+
+        db.commit()
+
+        # Simulate sending an email
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+        logger.info(f"Password reset for {email}: {reset_url}")
+        # In a real application, you would use a mail service here.
+        # For example:
+        # from ..utils.email_service import send_password_reset_email
+        # send_password_reset_email(user.email, reset_url)
+
+        return True
+
+    def reset_password(self, db: Session, token: str, new_password: str) -> bool:
+        """Reset the user's password using a token."""
+        user = self.user_repo.get_by_password_reset_token(db, token)
+
+        if not user:
+            logger.error(f"Invalid password reset token received: {token}")
+            return False
+
+        if user.password_reset_expires < datetime.utcnow():
+            logger.error(f"Expired password reset token for user: {user.email}")
+            user.password_reset_token = None
+            user.password_reset_expires = None
+            db.commit()
+            return False
+
+        # Reset password and clear token fields
+        user.hashed_password = hash_password(new_password)
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        db.commit()
+
+        logger.info(f"Password for user {user.email} has been reset successfully.")
+        return True
     
     def _create_user_access_token(self, user: User) -> str:
         """Create access token for user."""
