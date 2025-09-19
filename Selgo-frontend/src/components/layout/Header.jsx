@@ -8,8 +8,9 @@ import { FaUserCircle } from "react-icons/fa";
 // import { HiLanguage } from "react-icons/io5";
 // import { CiMenuFries } from "react-icons/gi";
 
-import { CiCirclePlus, CiBellOn, CiUser, CiChat1, CiMenuFries} from "react-icons/ci";
+import { CiCirclePlus, CiBellOn, CiUser, CiChat1, CiMenuFries, CiHeart } from "react-icons/ci";
 import { HiLanguage } from "react-icons/hi2";
+import { FavoritesCounter } from "@/components/favorites/FavoritesManager";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,12 +62,15 @@ const Header = () => {
     { name: "Travel", icon: "airplane-take-off-01.svg", href: "/routes/travel" },
     { name: "Jobs", icon: "job-search.svg", href: "/routes/jobs" },
     { name: "Property", icon: "home-09.svg", href: "/routes/property" },
+    { name: "Holiday Rentals", icon: "home-09.svg", href: "/routes/holiday-rentals" },
     { name: "Cars", icon: "car-02.svg", href: "/routes/cars" },
+    { name: "Car Auctions", icon: "car-02.svg", href: "/routes/car-auctions" },
     { name: "Motorcycles", icon: "motorbike-02.svg", href: "/routes/motor-cycle" },
+    { name: "Commercial Vehicles", icon: "car-02.svg", href: "/routes/commercial-vehicles" },
     { name: "Boat", icon: "boat.svg", href: "/routes/boat" },
+    { name: "Electronics", icon: "bot.svg", href: "/routes/electronics" },
     { name: "Square", icon: "shape-square.svg", href: "/routes/square" },
     { name: "Agreements", icon: "agreement-02.svg", href: "/routes/my-tender" },
-    { name: "Smart Devices", icon: "bot.svg", href: "/routes/nu-electronics" },
   ];
 
   // Handle Logout
@@ -191,6 +195,14 @@ const Header = () => {
           </div>
         </Link>
 
+        {/* Favorites */}
+        <Link href="/routes/favorites">
+          <div className={`relative cursor-pointer ${iconHoverClass}`}>
+            <CiHeart size={24} className="text-teal-700" />
+            <FavoritesCounter className="absolute -top-1 -right-2" />
+          </div>
+        </Link>
+
         {/* Notifications */}
         <Link href="/routes/notifications">
           <div className={`relative cursor-pointer ${iconHoverClass}`}>
@@ -284,6 +296,14 @@ const Header = () => {
                     {messages}
                   </span>
                 )}
+              </div>
+            </Link>
+
+            {/* Favorites */}
+            <Link href="/routes/favorites">
+              <div className={`relative cursor-pointer ${iconHoverClass}`}>
+                <CiHeart size={24} className="text-teal-700 shrink-0" />
+                <FavoritesCounter className="absolute -top-1 -right-2" />
               </div>
             </Link>
 

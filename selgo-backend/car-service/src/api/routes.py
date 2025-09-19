@@ -12,6 +12,7 @@ from ..services.services import (
     LoanEstimateService,
     UserFavoriteService
 )
+from .car_auction_routes import router as auction_router
 from ..models.car_schemas import (
     UserFavoriteCreate,
     UserFavoriteResponse,
@@ -43,6 +44,9 @@ router = APIRouter(
     tags=["cars"],
     responses={404: {"description": "Not found"}}
 )
+
+# Include auction routes
+router.include_router(auction_router, prefix="", tags=["Car Auctions"])
 
 # ==================== Car Category Routes ====================
 

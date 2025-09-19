@@ -10,8 +10,12 @@ from ..models.property_schemas import (
     PropertyCreate, PropertyUpdate, PropertyFilterParams, PaginatedResponse
 )
 from ..utils.auth import get_current_user_id
+from .holiday_rental_routes import router as holiday_rental_router
 
 router = APIRouter(prefix="/api/v1/properties", tags=["Properties"])
+
+# Include holiday rental routes
+router.include_router(holiday_rental_router, prefix="", tags=["Holiday Rentals"])
 
 @router.get("/categories", response_model=List[PropertyCategoryResponse])
 async def get_property_categories(

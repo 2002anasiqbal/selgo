@@ -198,6 +198,119 @@ services:
       - selgo-network
     command: uvicorn src.app:app --host 0.0.0.0 --port 8006 --reload
 
+  # Chat Service (NEW)
+  chat-service:
+    build:
+      context: ./chat-service
+      dockerfile: Dockerfile
+    container_name: selgo-chat-service
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./chat-service:/app
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=selgo_chat
+      - API_HOST=0.0.0.0
+      - API_PORT=8007
+      - ENVIRONMENT=development
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - auth-service
+      - redis
+    networks:
+      - selgo-network
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8007 --reload
+
+  # Travel Service (NEW)
+  travel-service:
+    build:
+      context: ./travel-service
+      dockerfile: Dockerfile
+    container_name: selgo-travel-service
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./travel-service:/app
+      - ./travel-service/uploads:/app/uploads
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=selgo_travel
+      - API_HOST=0.0.0.0
+      - API_PORT=8008
+      - ENVIRONMENT=development
+      - AUTH_SERVICE_URL=http://auth-service:8001
+    depends_on:
+      - postgres
+      - auth-service
+    networks:
+      - selgo-network
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8008 --reload
+
+  # Electronics Service (NEW)
+  electronics-service:
+    build:
+      context: ./electronics-service
+      dockerfile: Dockerfile
+    container_name: selgo-electronics-service
+    ports:
+      - "8009:8009"
+    volumes:
+      - ./electronics-service:/app
+      - ./electronics-service/uploads:/app/uploads
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=selgo_electronics
+      - API_HOST=0.0.0.0
+      - API_PORT=8009
+      - ENVIRONMENT=development
+      - AUTH_SERVICE_URL=http://auth-service:8001
+    depends_on:
+      - postgres
+      - auth-service
+    networks:
+      - selgo-network
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8009 --reload
+
+  # Commercial Vehicles Service (NEW)
+  commercial-service:
+    build:
+      context: ./commercial-service
+      dockerfile: Dockerfile
+    container_name: selgo-commercial-service
+    ports:
+      - "8010:8010"
+    volumes:
+      - ./commercial-service:/app
+      - ./commercial-service/uploads:/app/uploads
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=selgo_commercial
+      - API_HOST=0.0.0.0
+      - API_PORT=8010
+      - ENVIRONMENT=development
+      - AUTH_SERVICE_URL=http://auth-service:8001
+    depends_on:
+      - postgres
+      - auth-service
+    networks:
+      - selgo-network
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8010 --reload
+
 
   # Redis (for caching)
   redis:

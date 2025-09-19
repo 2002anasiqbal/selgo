@@ -1,6 +1,6 @@
 "use client";
 import GenericCardCollection from "../GenericCardCollection";
-import SearchBar from "../root/SearchBar";
+import AdvancedSearch from "../search/AdvancedSearch";
 import ButtonWithIcon from "../root/ButtonWithIcon";
 import { LiaMapMarkedAltSolid } from "react-icons/lia";
 import { useRouter } from "next/navigation";
@@ -64,13 +64,12 @@ export default function Hero() {
 
   return (
     <div className="relative pt-5">
-      <div className="flex justify-center items-center gap-4 w-full mb-4">
-        <SearchBar placeholder="Search" onChange={() => console.log("change")} />
-        <ButtonWithIcon
-          icon={LiaMapMarkedAltSolid}
-          label="Map"
-          onClick={navigateToMap}
-          iconProps={{ className: "text-teal-700", size: 24 }} // Also update the map button icon for consistency
+      <div className="w-full mb-4 max-w-4xl mx-auto px-4">
+        <AdvancedSearch 
+          searchType="all"
+          showLocationFilter={true}
+          showPriceFilter={true}
+          showCategoryFilter={true}
         />
       </div>
 
